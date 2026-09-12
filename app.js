@@ -53,7 +53,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '9';
+const APP_VERSION = '10';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -81,11 +81,39 @@ const FILTER_KEY = 'ua_filters_v4';
 let filters = new Set(store.get(FILTER_KEY, DEFAULT_FILTERS).filter(k => ALL_FILTERS.includes(k)));
 if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
 
-// Starred games, by ESPN game id. Starred games jump to the top while live only.
+// Favorites come from two places: games starred directly (by ESPN game id) and favorite
+// teams (every game they play is starred automatically, week after week). Un-starring a
+// game that is only a favorite through its team goes into an exclusion list, so the
+// team stays favorited but that one game does not.
 const favorites = new Set(store.get('ua_favs', []));
+const excludedGames = new Set(store.get('ua_fav_excluded', []));
+let favTeams = store.get('ua_fav_teams', []); // [{id, name, full, abbr, logo, conf, cat}]
+const favTeamIds = () => new Set(favTeams.map(t => t.id));
+
+function isTeamFavorite(g) {
+  const ids = favTeamIds();
+  return ids.has(g.home.id) || ids.has(g.away.id);
+}
+function isFavoriteGame(g) {
+  return !excludedGames.has(g.id) && (favorites.has(g.id) || isTeamFavorite(g));
+}
 function toggleFavorite(id) {
-  if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
+  const g = games.find(x => x.id === id);
+  if (!g) return;
+  if (isFavoriteGame(g)) {
+    favorites.delete(id);
+    if (isTeamFavorite(g)) excludedGames.add(id);
+  } else {
+    excludedGames.delete(id);
+    if (!isTeamFavorite(g)) favorites.add(id);
+  }
   store.set('ua_favs', [...favorites]);
+  store.set('ua_fav_excluded', [...excludedGames]);
+  renderGames(games);
+}
+function saveFavTeams() {
+  store.set('ua_fav_teams', favTeams);
+  els.favTeamsBtn.classList.toggle('has-teams', favTeams.length > 0);
   renderGames(games);
 }
 
@@ -213,7 +241,7 @@ function compareGames(a, b) {
 
   if (ba === 0) {
     // Live: starred games first, then closest tier, then least time left, then raw margin.
-    return favorites.has(b.id) - favorites.has(a.id)
+    return isFavoriteGame(b) - isFavoriteGame(a)
       || tier(a) - tier(b) || secondsLeft(a) - secondsLeft(b) || diff(a) - diff(b);
   }
   if (ba === 1) {
@@ -239,6 +267,13 @@ const els = {
   refreshBtn: byId('refresh-btn'),
   chips: Array.from(document.querySelectorAll('.chip[data-conf]')),
   chipAll: byId('chip-all'),
+  favTeamsBtn: byId('fav-teams-btn'),
+  panel: byId('panel'),
+  panelBack: byId('panel-back'),
+  panelClose: byId('panel-close'),
+  panelTitle: byId('panel-title'),
+  panelBody: byId('panel-body'),
+  panelFoot: byId('panel-foot'),
 };
 function byId(id) { return document.getElementById(id); }
 
@@ -325,7 +360,7 @@ function cardHtml(g, upset, close, fav) {
 
 function renderGames(games) {
   const visible = games.filter(g =>
-    [...g.confKeys].some(k => filters.has(k)) || (filters.has('fav') && favorites.has(g.id)));
+    [...g.confKeys].some(k => filters.has(k)) || (filters.has('fav') && isFavoriteGame(g)));
   visible.sort(compareGames);
 
   const seen = new Set();
@@ -335,7 +370,7 @@ function renderGames(games) {
   for (const state of ['in', 'pre', 'post']) {
     const list = els.lists[state];
     for (const g of perBucket[state]) {
-      const upset = isUpsetAlert(g), close = isCloseGame(g), fav = favorites.has(g.id);
+      const upset = isUpsetAlert(g), close = isCloseGame(g), fav = isFavoriteGame(g);
       const html = cardHtml(g, upset, close, fav);
       let entry = cardEls.get(g.id);
       if (!entry) {
@@ -550,6 +585,170 @@ function applyDemo(list) {
   });
   return out;
 }
+
+// ---------- Favorite Teams panel ----------
+// Team lists come from ESPN's standings endpoint, one request per conference group,
+// walked recursively because some conferences (Sun Belt, SWAC, all of D-II) nest divisions.
+const STANDINGS_URL = g => `https://site.web.api.espn.com/apis/v2/sports/football/college-football/standings?group=${g}&level=3`;
+const TEAM_CATEGORIES = [
+  { key: 'sec', label: 'SEC', groups: [8] },
+  { key: 'b1g', label: 'Big Ten', groups: [5] },
+  { key: 'b12', label: 'Big 12', groups: [4] },
+  { key: 'acc', label: 'ACC', groups: [1] },
+  { key: 'ind', label: 'Independent', groups: [18] },
+  { key: 'fbs', label: 'Remaining FBS', groups: [151, 12, 15, 17, 9, 37] },
+  { key: 'fcs', label: 'FCS', groups: [81] },
+  { key: 'd2', label: 'Div 2', groups: [35] },
+];
+const TEAMS_TTL_MS = 7 * 24 * 3600 * 1000;
+const teamCache = new Map(); // cat key -> [{conf, teams:[...]}]
+
+function walkStandings(node, out, confName) {
+  const entries = (node.standings && node.standings.entries) || [];
+  const name = node.name || confName || '';
+  if (entries.length) {
+    out.push({
+      conf: name,
+      teams: entries.map(e => e.team).map(t => ({
+        id: String(t.id),
+        name: t.shortDisplayName || t.displayName,
+        full: t.displayName,
+        abbr: t.abbreviation || '',
+        logo: (t.logos && t.logos[0] && t.logos[0].href) || '',
+        conf: name,
+      })).sort((a, b) => a.name.localeCompare(b.name)),
+    });
+  }
+  for (const child of node.children || []) walkStandings(child, out, name);
+}
+
+async function loadCategory(cat) {
+  if (teamCache.has(cat.key)) return teamCache.get(cat.key);
+  const cached = store.get(`ua_teams_${cat.key}`, null);
+  if (cached && Date.now() - cached.at < TEAMS_TTL_MS) {
+    teamCache.set(cat.key, cached.sections);
+    return cached.sections;
+  }
+  const sections = [];
+  const docs = await Promise.all(cat.groups.map(g => fetch(STANDINGS_URL(g)).then(r => {
+    if (!r.ok) throw new Error(`ESPN responded ${r.status}`);
+    return r.json();
+  })));
+  for (const doc of docs) walkStandings(doc, sections);
+  teamCache.set(cat.key, sections);
+  store.set(`ua_teams_${cat.key}`, { at: Date.now(), sections });
+  return sections;
+}
+
+let panelView = 'list';   // list | cats | teams
+let panelCat = null;
+let panelQuery = '';
+
+function openPanel() {
+  showPanelView('list');
+  els.panel.hidden = false;
+  document.body.classList.add('panel-open');
+}
+function closePanel() {
+  els.panel.hidden = true;
+  document.body.classList.remove('panel-open');
+}
+
+function showPanelView(view, cat) {
+  panelView = view;
+  if (cat) panelCat = cat;
+  els.panelBack.hidden = view === 'list';
+  els.panelTitle.textContent = view === 'list' ? 'Favorite Teams'
+    : view === 'cats' ? 'Add New Favorite Team' : panelCat.label;
+  els.panelFoot.innerHTML = view === 'list'
+    ? '<button class="btn-primary" id="add-team-btn">Add New Favorite Team</button>' : '';
+  els.panelBody.scrollTop = 0;
+  if (view === 'list') renderFavList();
+  else if (view === 'cats') renderCategories();
+  else renderTeamPicker();
+}
+
+function teamRow(t, starred) {
+  return `<li data-team="${esc(t.id)}">
+    <img src="${esc(t.logo)}" alt="" loading="lazy">
+    <div class="grow"><span class="t-name">${esc(t.full || t.name)}</span><span class="t-conf">${esc(t.conf)}</span></div>
+    <button class="star inline${starred ? ' on' : ''}" aria-pressed="${starred}" aria-label="${starred ? 'Remove favorite' : 'Add favorite'}">${STAR_SVG}</button>
+  </li>`;
+}
+
+function renderFavList() {
+  if (!favTeams.length) {
+    els.panelBody.innerHTML = `<p class="panel-empty">No favorite teams yet.<br>Games your favorite teams play are starred automatically every week and jump to the top while live.</p>`;
+    return;
+  }
+  const sorted = [...favTeams].sort((a, b) => a.name.localeCompare(b.name));
+  els.panelBody.innerHTML = `<p class="panel-note">Their games are starred automatically each week.</p>
+    <ul class="team-list">${sorted.map(t => teamRow(t, true)).join('')}</ul>`;
+}
+
+function renderCategories() {
+  const counts = {};
+  for (const t of favTeams) counts[t.cat] = (counts[t.cat] || 0) + 1;
+  els.panelBody.innerHTML = `<div class="cat-list">${TEAM_CATEGORIES.map(c =>
+    `<button class="cat-btn" data-cat="${c.key}"><span>${esc(c.label)}</span><span>${counts[c.key] ? `<span class="count">${counts[c.key]} ★</span>` : ''}<span class="chev">›</span></span></button>`
+  ).join('')}</div>`;
+}
+
+async function renderTeamPicker() {
+  const cat = panelCat;
+  els.panelBody.innerHTML = `<input class="search" id="team-search" type="search" placeholder="Search teams" value="${esc(panelQuery)}" autocomplete="off">
+    <p class="panel-empty">Loading teams…</p>`;
+  let sections;
+  try { sections = await loadCategory(cat); }
+  catch (err) {
+    els.panelBody.querySelector('.panel-empty').textContent = `Could not load teams: ${err.message}`;
+    return;
+  }
+  if (panelView !== 'teams' || panelCat !== cat) return; // user navigated away meanwhile
+  const ids = favTeamIds();
+  const q = panelQuery.trim().toLowerCase();
+  const html = sections.map(sec => {
+    const teams = q ? sec.teams.filter(t => (t.full + ' ' + t.abbr).toLowerCase().includes(q)) : sec.teams;
+    if (!teams.length) return '';
+    return `${sections.length > 1 ? `<h3>${esc(sec.conf)}</h3>` : ''}${teams.map(t => teamRow(t, ids.has(t.id))).join('')}`;
+  }).join('');
+  const list = els.panelBody.querySelector('.panel-empty');
+  list.outerHTML = html ? `<ul class="team-list">${html}</ul>` : '<p class="panel-empty">No teams match.</p>';
+  const search = byId('team-search');
+  search.addEventListener('input', () => { panelQuery = search.value; renderTeamPicker(); });
+  if (q) { search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
+}
+
+function toggleFavTeam(id) {
+  const existing = favTeams.find(t => t.id === id);
+  if (existing) {
+    favTeams = favTeams.filter(t => t.id !== id);
+  } else {
+    const sections = teamCache.get(panelCat && panelCat.key) || [];
+    const t = sections.flatMap(sec => sec.teams).find(x => x.id === id);
+    if (!t) return;
+    favTeams.push({ ...t, cat: panelCat.key });
+  }
+  saveFavTeams();
+}
+
+els.favTeamsBtn.addEventListener('click', openPanel);
+els.panelClose.addEventListener('click', closePanel);
+els.panelBack.addEventListener('click', () => showPanelView(panelView === 'teams' ? 'cats' : 'list'));
+els.panel.addEventListener('click', e => {
+  if (e.target.closest('#add-team-btn')) { panelQuery = ''; showPanelView('cats'); return; }
+  const catBtn = e.target.closest('.cat-btn');
+  if (catBtn) { panelQuery = ''; showPanelView('teams', TEAM_CATEGORIES.find(c => c.key === catBtn.dataset.cat)); return; }
+  const star = e.target.closest('.star.inline');
+  if (star) {
+    const id = star.closest('li').dataset.team;
+    toggleFavTeam(id);
+    if (panelView === 'list') renderFavList();
+    else { const on = favTeamIds().has(id); star.classList.toggle('on', on); star.setAttribute('aria-pressed', on); }
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !els.panel.hidden) closePanel(); });
+els.favTeamsBtn.classList.toggle('has-teams', favTeams.length > 0);
 
 // ---------- wiring ----------
 for (const chip of els.chips) {

@@ -9,16 +9,19 @@
   <meta name="apple-mobile-web-app-title" content="Upset Alert">
   <title>Upset Alert</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🚨%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
   <header class="top">
-    <div class="brand">
-      <h1>🚨 Upset Alert</h1>
-      <div class="sub">
-        <select id="week-select" aria-label="Week"><option>Loading…</option></select>
-        <span id="week-label">· College football</span>
+    <div class="brand-row">
+      <div class="brand">
+        <h1>🚨 Upset Alert</h1>
+        <div class="sub">
+          <select id="week-select" aria-label="Week"><option>Loading…</option></select>
+          <span id="week-label">· College football</span>
+        </div>
       </div>
+      <button id="fav-teams-btn" class="menu-btn" aria-haspopup="dialog">★ <span class="long">Favorite </span>Teams <span class="caret">▾</span></button>
     </div>
     <div class="controls">
       <div class="filters" id="filters" role="group" aria-label="Conference filters">
@@ -63,6 +66,16 @@
     <span>Live games rank by tier (0–8, 9–16, 17–24…) then time left · Scores &amp; lines from ESPN</span>
   </footer>
 
-  <script src="app.js?v=9"></script>
+  <div id="panel" class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden>
+    <div class="panel-head">
+      <button id="panel-back" class="panel-nav" hidden>‹ Back</button>
+      <h2 id="panel-title">Favorite Teams</h2>
+      <button id="panel-close" class="panel-nav">Done</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+    <div class="panel-foot" id="panel-foot"></div>
+  </div>
+
+  <script src="app.js?v=10"></script>
 </body>
 </html>
