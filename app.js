@@ -13,6 +13,7 @@ const CONF_KEYS = {
   '151': 'fbs', '12': 'fbs', '15': 'fbs', '17': 'fbs', '9': 'fbs', '37': 'fbs',
 };
 const ALL_FILTERS = ['sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
+const DEFAULT_FILTERS = ['sec', 'b1g', 'b12', 'acc']; // Power 4 only until the user opts in
 
 const UPSET_MIN_SPREAD = 7;     // favorite must be laying MORE than this
 const CLOSE_MAX_DIFF = 8;       // one-score game
@@ -38,10 +39,10 @@ const store = {
 // ESPN removes the odds once a game ends (and sometimes mid-game), so remember
 // every pregame line we see, keyed by game id.
 const spreadCache = store.get('ua_spreads', {});
-// Storage key is versioned so adding a filter key resets everyone to "all on".
-const FILTER_KEY = 'ua_filters_v2';
-let filters = new Set(store.get(FILTER_KEY, ALL_FILTERS).filter(k => ALL_FILTERS.includes(k)));
-if (filters.size === 0) filters = new Set(ALL_FILTERS);
+// Storage key is versioned so changing the chips resets everyone to the defaults.
+const FILTER_KEY = 'ua_filters_v3';
+let filters = new Set(store.get(FILTER_KEY, DEFAULT_FILTERS).filter(k => ALL_FILTERS.includes(k)));
+if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
 
 // ---------- parsing ----------
 function parseTeam(c, situation) {
@@ -389,7 +390,7 @@ for (const chip of els.chips) {
   chip.addEventListener('click', () => {
     const k = chip.dataset.conf;
     if (filters.has(k)) filters.delete(k); else filters.add(k);
-    if (filters.size === 0) filters = new Set(ALL_FILTERS); // never leave an empty board
+    if (filters.size === 0) filters = new Set(DEFAULT_FILTERS); // never leave an empty board
     store.set(FILTER_KEY, [...filters]);
     renderFilters();
     renderGames(games);
