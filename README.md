@@ -1,7 +1,8 @@
 # Upset Alert
 
-Personal college-football scoreboard: every game involving a Power 4 team (SEC, Big Ten,
-Big 12, ACC) or Notre Dame, ordered so the games worth watching float to the top.
+Personal college-football scoreboard for every FBS game, ordered so the games worth watching
+float to the top. Filter chips narrow it to the SEC, Big Ten, Big 12, ACC, Independents
+(Notre Dame, UConn) or the remaining FBS conferences; all are on by default.
 
 ## Run it
 

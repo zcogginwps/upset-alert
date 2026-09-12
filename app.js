@@ -1,14 +1,18 @@
-/* Upset Alert — Power 4 + Notre Dame college football scoreboard.
+/* Upset Alert — FBS college football scoreboard.
  * Data comes straight from ESPN's public scoreboard feed (no key needed). */
 
 const ESPN_URL =
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=300';
 
-// ESPN conference ids -> filter keys. Notre Dame is an independent (conference 18,
-// shared with UConn), so it is matched by team id instead.
-const CONF_KEYS = { '8': 'sec', '5': 'b1g', '4': 'b12', '1': 'acc' };
-const NOTRE_DAME_ID = '87';
-const ALL_FILTERS = ['sec', 'b1g', 'b12', 'acc', 'nd'];
+// ESPN conference ids -> filter keys. 18 is FBS Independents (Notre Dame, UConn);
+// every other FBS conference (American, CUSA, MAC, MWC, Pac-12, Sun Belt) rolls up
+// into "remaining FBS". FCS teams get no key, so an FCS-vs-FCS game never shows, but a
+// P4/FBS team hosting an FCS opponent still does through its own conference.
+const CONF_KEYS = {
+  '8': 'sec', '5': 'b1g', '4': 'b12', '1': 'acc', '18': 'ind',
+  '151': 'fbs', '12': 'fbs', '15': 'fbs', '17': 'fbs', '9': 'fbs', '37': 'fbs',
+};
+const ALL_FILTERS = ['sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
 
 const UPSET_MIN_SPREAD = 7;     // favorite must be laying MORE than this
 const CLOSE_MAX_DIFF = 8;       // one-score game
@@ -34,7 +38,10 @@ const store = {
 // ESPN removes the odds once a game ends (and sometimes mid-game), so remember
 // every pregame line we see, keyed by game id.
 const spreadCache = store.get('ua_spreads', {});
-let filters = new Set(store.get('ua_filters', ALL_FILTERS));
+// Storage key is versioned so adding a filter key resets everyone to "all on".
+const FILTER_KEY = 'ua_filters_v2';
+let filters = new Set(store.get(FILTER_KEY, ALL_FILTERS).filter(k => ALL_FILTERS.includes(k)));
+if (filters.size === 0) filters = new Set(ALL_FILTERS);
 
 // ---------- parsing ----------
 function parseTeam(c, situation) {
@@ -90,7 +97,6 @@ function parseEvent(ev) {
   const confKeys = new Set();
   for (const t of [home, away]) {
     if (CONF_KEYS[t.confId]) confKeys.add(CONF_KEYS[t.confId]);
-    if (t.id === NOTRE_DAME_ID) confKeys.add('nd');
   }
 
   return {
@@ -312,7 +318,7 @@ async function refresh() {
     store.set('ua_spreads', spreadCache);
     lastFetched = new Date();
     const wk = data.week && data.week.number;
-    els.week.textContent = `${wk ? `Week ${wk} · ` : ''}Power 4 + Notre Dame${DEMO ? ' · DEMO DATA' : ''}`;
+    els.week.textContent = `${wk ? `Week ${wk} · ` : ''}FBS scoreboard${DEMO ? ' · DEMO DATA' : ''}`;
     els.error.hidden = true;
     renderGames(games);
   } catch (err) {
@@ -384,14 +390,14 @@ for (const chip of els.chips) {
     const k = chip.dataset.conf;
     if (filters.has(k)) filters.delete(k); else filters.add(k);
     if (filters.size === 0) filters = new Set(ALL_FILTERS); // never leave an empty board
-    store.set('ua_filters', [...filters]);
+    store.set(FILTER_KEY, [...filters]);
     renderFilters();
     renderGames(games);
   });
 }
 els.chipAll.addEventListener('click', () => {
   filters = new Set(ALL_FILTERS);
-  store.set('ua_filters', [...filters]);
+  store.set(FILTER_KEY, [...filters]);
   renderFilters();
   renderGames(games);
 });
