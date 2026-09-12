@@ -1,8 +1,9 @@
 # Upset Alert
 
-Personal college-football scoreboard for every FBS game, ordered so the games worth watching
-float to the top. Filter chips narrow it to the SEC, Big Ten, Big 12, ACC, Independents
-(Notre Dame, UConn) or the remaining FBS conferences; all are on by default.
+Personal college-football scoreboard covering FBS, FCS and Division II, ordered so the games
+worth watching float to the top. Filter chips: Favorites, SEC, Big Ten, Big 12, ACC,
+Independents (Notre Dame, UConn), remaining FBS, FCS, Div 2. Favorites + Power 4 are on by
+default.
 
 ## Run it
 

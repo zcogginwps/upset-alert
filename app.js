@@ -1,8 +1,15 @@
 /* Upset Alert — FBS college football scoreboard.
  * Data comes straight from ESPN's public scoreboard feed (no key needed). */
 
-const ESPN_URL =
-  'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=300';
+const ESPN_BASE =
+  'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=500';
+// ESPN "groups": 80 = FBS, 81 = FCS, 35 = Division II. A game involving teams from two
+// levels (e.g. an FCS team at a Big Ten school) shows up in both feeds; they are merged by id.
+const GROUPS = [
+  { id: 80, key: null },
+  { id: 81, key: 'fcs' },
+  { id: 35, key: 'd2' },
+];
 // Week selection: {type, week} where type is ESPN's season type (2 regular, 3 postseason).
 // null means "whatever ESPN says the current week is". Mirrored into the URL (?week=3 or
 // ?week=bowls) so a specific week can be linked to; a plain link always opens the current week.
@@ -17,9 +24,9 @@ function weekFromUrl() {
   return /^\d+$/.test(w) ? { type: 2, week: Number(w) } : null;
 }
 
-function scoreboardUrl() {
-  if (!selectedWeek) return ESPN_URL;
-  return `${ESPN_URL}&seasontype=${selectedWeek.type}&week=${selectedWeek.week}`;
+function scoreboardUrl(groupId) {
+  const week = selectedWeek ? `&seasontype=${selectedWeek.type}&week=${selectedWeek.week}` : '';
+  return `${ESPN_BASE}&groups=${groupId}${week}`;
 }
 
 // ESPN conference ids -> filter keys. 18 is FBS Independents (Notre Dame, UConn);
@@ -30,7 +37,8 @@ const CONF_KEYS = {
   '8': 'sec', '5': 'b1g', '4': 'b12', '1': 'acc', '18': 'ind',
   '151': 'fbs', '12': 'fbs', '15': 'fbs', '17': 'fbs', '9': 'fbs', '37': 'fbs',
 };
-const ALL_FILTERS = ['fav', 'sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
+const FBS_KEYS = ['sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
+const ALL_FILTERS = ['fav', ...FBS_KEYS, 'fcs', 'd2'];
 const DEFAULT_FILTERS = ['fav', 'sec', 'b1g', 'b12', 'acc']; // Power 4 (+ starred games) until the user opts in
 
 const UPSET_MIN_SPREAD = 7;     // favorite must be laying MORE than this
@@ -45,7 +53,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '8';
+const APP_VERSION = '9';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -124,7 +132,7 @@ function parseBroadcast(comp) {
   return geo ? geo.media.shortName : '';
 }
 
-function parseEvent(ev) {
+function parseEvent(ev, levelKeys) {
   const comp = ev.competitions[0];
   const homeC = comp.competitors.find(c => c.homeAway === 'home');
   const awayC = comp.competitors.find(c => c.homeAway === 'away');
@@ -140,6 +148,10 @@ function parseEvent(ev) {
   for (const t of [home, away]) {
     if (CONF_KEYS[t.confId]) confKeys.add(CONF_KEYS[t.confId]);
   }
+  // Non-FBS teams have no conference mapping; they take the level of whichever
+  // feed(s) the game came from (an FCS-vs-FBS game is tagged both ways).
+  const nonFbs = [home, away].filter(t => !CONF_KEYS[t.confId]).length;
+  if (nonFbs) for (const k of levelKeys) confKeys.add(k);
 
   return {
     id: ev.id,
@@ -373,18 +385,26 @@ async function checkForNewBuild() {
 
 async function backfillSpreads(list) {
   const now = Date.now();
-  const missing = list.filter(g => !g.spread && now - (oddsAttempts.get(g.id) || 0) > ODDS_RETRY_MS);
+  // Pregame lines still arrive through the scoreboard itself, and Division II games are
+  // never priced, so only chase live/final games at FBS or FCS level.
+  const missing = list.filter(g => !g.spread && g.state !== 'pre'
+    && [...g.confKeys].some(k => k !== 'd2')
+    && now - (oddsAttempts.get(g.id) || 0) > ODDS_RETRY_MS);
   if (!missing.length) return;
   for (const g of missing) oddsAttempts.set(g.id, now);
-  const results = await Promise.allSettled(missing.map(async g => {
-    const res = await fetch(ODDS_URL(g.id), { cache: 'no-store' });
-    if (!res.ok) throw new Error(res.status);
-    const items = (await res.json()).items || [];
-    const o = items.find(i => i.provider && i.provider.id === '100') || items[0]; // prefer DraftKings
-    const spread = spreadFromOdds(o, g.home, g.away);
-    if (spread) { spreadCache[g.id] = spread; g.spread = spread; }
-  }));
-  if (results.some(r => r.status === 'fulfilled')) {
+  let found = false;
+  const CHUNK = 6;
+  for (let i = 0; i < missing.length; i += CHUNK) {
+    await Promise.allSettled(missing.slice(i, i + CHUNK).map(async g => {
+      const res = await fetch(ODDS_URL(g.id), { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      const items = (await res.json()).items || [];
+      const o = items.find(it => it.provider && it.provider.id === '100') || items[0]; // prefer DraftKings
+      const spread = spreadFromOdds(o, g.home, g.away);
+      if (spread) { spreadCache[g.id] = spread; g.spread = spread; found = true; }
+    }));
+  }
+  if (found) {
     store.set('ua_spreads', spreadCache);
     renderGames(games);
   }
@@ -397,11 +417,23 @@ async function refresh() {
   checkForNewBuild();
   try {
     const requested = selectedWeek;
-    const res = await fetch(scoreboardUrl(), { cache: 'no-store' });
-    if (!res.ok) throw new Error(`ESPN responded ${res.status}`);
-    const data = await res.json();
+    const feeds = await Promise.all(GROUPS.map(async grp => {
+      const res = await fetch(scoreboardUrl(grp.id), { cache: 'no-store' });
+      if (!res.ok) throw new Error(`ESPN responded ${res.status}`);
+      return { grp, data: await res.json() };
+    }));
     if (requested !== selectedWeek) return; // user changed weeks while this was in flight
-    games = (data.events || []).map(parseEvent).filter(g => g.confKeys.size > 0);
+    const data = feeds[0].data; // FBS feed carries the week/calendar info
+    const byId = new Map(); // event id -> { ev, levelKeys }
+    for (const { grp, data: d } of feeds) {
+      for (const ev of d.events || []) {
+        const entry = byId.get(ev.id) || { ev, levelKeys: new Set() };
+        if (grp.key) entry.levelKeys.add(grp.key);
+        byId.set(ev.id, entry);
+      }
+    }
+    games = [...byId.values()].map(({ ev, levelKeys }) => parseEvent(ev, levelKeys))
+      .filter(g => g.confKeys.size > 0);
     if (DEMO) games = applyDemo(games);
     store.set('ua_spreads', spreadCache);
     lastFetched = new Date();
@@ -410,7 +442,7 @@ async function refresh() {
     }
     if (!calendar.length) buildCalendar(data);
     renderWeekSelect();
-    els.week.textContent = `· FBS scoreboard${DEMO ? ' · DEMO DATA' : ''}`;
+    els.week.textContent = `· College football${DEMO ? ' · DEMO DATA' : ''}`;
     els.error.hidden = true;
     renderGames(games);
     backfillSpreads(games); // async; re-renders when lines arrive
