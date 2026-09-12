@@ -31,7 +31,13 @@ body {
   padding: calc(12px + env(safe-area-inset-top)) 0 10px;
 }
 .brand h1 { margin: 0; font-size: 22px; letter-spacing: .3px; }
-.brand .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.brand .sub { color: var(--muted); font-size: 13px; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+#week-select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b93a7' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 9px center;
+  color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  padding: 4px 26px 4px 10px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer;
+}
 .controls {
   display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
   justify-content: space-between; margin-top: 10px;

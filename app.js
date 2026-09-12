@@ -3,6 +3,24 @@
 
 const ESPN_URL =
   'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=300';
+// Week selection: {type, week} where type is ESPN's season type (2 regular, 3 postseason).
+// null means "whatever ESPN says the current week is". Mirrored into the URL (?week=3 or
+// ?week=bowls) so a specific week can be linked to; a plain link always opens the current week.
+let selectedWeek = weekFromUrl();
+let currentWeek = null; // filled from the first fetch
+let calendar = [];      // [{type, week, label}] from ESPN's league calendar
+
+function weekFromUrl() {
+  const w = new URLSearchParams(location.search).get('week');
+  if (!w) return null;
+  if (w === 'bowls') return { type: 3, week: 1 };
+  return /^\d+$/.test(w) ? { type: 2, week: Number(w) } : null;
+}
+
+function scoreboardUrl() {
+  if (!selectedWeek) return ESPN_URL;
+  return `${ESPN_URL}&seasontype=${selectedWeek.type}&week=${selectedWeek.week}`;
+}
 
 // ESPN conference ids -> filter keys. 18 is FBS Independents (Notre Dame, UConn);
 // every other FBS conference (American, CUSA, MAC, MWC, Pac-12, Sun Belt) rolls up
@@ -27,7 +45,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '6';
+const APP_VERSION = '7';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -196,6 +214,7 @@ const els = {
   error: byId('error'),
   updated: byId('updated'),
   week: byId('week-label'),
+  weekSelect: byId('week-select'),
   refreshBtn: byId('refresh-btn'),
   chips: Array.from(document.querySelectorAll('.chip[data-conf]')),
   chipAll: byId('chip-all'),
@@ -212,7 +231,7 @@ function fmtKickoff(d) {
   const now = new Date();
   const sameDay = d.toDateString() === now.toDateString();
   const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  const day = sameDay ? '' : d.toLocaleDateString([], { weekday: 'short' });
+  const day = sameDay ? '' : d.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' });
   return { time, day };
 }
 
@@ -325,6 +344,7 @@ let games = [];
 let lastFetched = null;
 let pollTimer = null;
 let inflight = false;
+let refetchWanted = false; // week changed while a fetch was in flight
 
 async function checkForNewBuild() {
   try {
@@ -358,20 +378,26 @@ async function backfillSpreads(list) {
 }
 
 async function refresh() {
-  if (inflight) return;
+  if (inflight) { refetchWanted = true; return; }
   inflight = true;
   els.refreshBtn.classList.add('spin');
   checkForNewBuild();
   try {
-    const res = await fetch(ESPN_URL, { cache: 'no-store' });
+    const requested = selectedWeek;
+    const res = await fetch(scoreboardUrl(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`ESPN responded ${res.status}`);
     const data = await res.json();
+    if (requested !== selectedWeek) return; // user changed weeks while this was in flight
     games = (data.events || []).map(parseEvent).filter(g => g.confKeys.size > 0);
     if (DEMO) games = applyDemo(games);
     store.set('ua_spreads', spreadCache);
     lastFetched = new Date();
-    const wk = data.week && data.week.number;
-    els.week.textContent = `${wk ? `Week ${wk} · ` : ''}FBS scoreboard${DEMO ? ' · DEMO DATA' : ''}`;
+    if (!currentWeek && data.week && data.season) {
+      currentWeek = { type: data.season.type, week: data.week.number };
+    }
+    if (!calendar.length) buildCalendar(data);
+    renderWeekSelect();
+    els.week.textContent = `· FBS scoreboard${DEMO ? ' · DEMO DATA' : ''}`;
     els.error.hidden = true;
     renderGames(games);
     backfillSpreads(games); // async; re-renders when lines arrive
@@ -383,7 +409,49 @@ async function refresh() {
     els.refreshBtn.classList.remove('spin');
     updateStamp();
     schedule();
+    if (refetchWanted) { refetchWanted = false; refresh(); }
   }
+}
+
+// ---------- week picker ----------
+function buildCalendar(data) {
+  const league = (data.leagues || [])[0];
+  for (const block of (league && league.calendar) || []) {
+    const type = Number(block.value);
+    if (type === 2) {
+      for (const e of block.entries || []) calendar.push({ type, week: Number(e.value), label: e.label });
+    } else if (type === 3) {
+      calendar.push({ type, week: 1, label: 'Bowls & Playoff' });
+    }
+  }
+}
+
+function sameWeek(a, b) { return !!a && !!b && a.type === b.type && a.week === b.week; }
+
+function renderWeekSelect() {
+  const sel = els.weekSelect;
+  const active = selectedWeek || currentWeek;
+  if (!calendar.length) {
+    sel.innerHTML = `<option>${active ? `Week ${active.week}` : 'This week'}</option>`;
+    return;
+  }
+  sel.innerHTML = calendar.map(c => {
+    const value = c.type === 3 ? 'bowls' : String(c.week);
+    const label = sameWeek(c, currentWeek) ? `${c.label} (this week)` : c.label;
+    return `<option value="${value}"${sameWeek(c, active) ? ' selected' : ''}>${esc(label)}</option>`;
+  }).join('');
+}
+
+function onWeekChange() {
+  const v = els.weekSelect.value;
+  const pick = v === 'bowls' ? { type: 3, week: 1 } : { type: 2, week: Number(v) };
+  selectedWeek = sameWeek(pick, currentWeek) ? null : pick; // current week keeps a clean URL
+  const url = new URL(location.href);
+  if (selectedWeek) url.searchParams.set('week', v); else url.searchParams.delete('week');
+  history.replaceState(null, '', url);
+  games = [];
+  els.updated.textContent = 'Loading…';
+  refresh();
 }
 
 function schedule() {
@@ -456,6 +524,7 @@ els.chipAll.addEventListener('click', () => {
   renderGames(games);
 });
 els.refreshBtn.addEventListener('click', refresh);
+els.weekSelect.addEventListener('change', onWeekChange);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 
 renderFilters();
