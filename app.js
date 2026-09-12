@@ -27,7 +27,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '5';
+const APP_VERSION = '6';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -41,9 +41,15 @@ const store = {
   },
 };
 
-// ESPN removes the odds once a game ends (and sometimes mid-game), so remember
-// every pregame line we see, keyed by game id.
+// The scoreboard feed drops the odds the moment a game kicks off, but ESPN's per-game
+// odds endpoint keeps them through the final. Remember every line we see, keyed by game
+// id, and backfill missing ones from that endpoint so someone opening the app mid-game
+// (or after it ended) still gets the spread and the upset alert.
 const spreadCache = store.get('ua_spreads', {});
+const ODDS_URL = id =>
+  `https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/events/${id}/competitions/${id}/odds`;
+const ODDS_RETRY_MS = 10 * 60 * 1000;
+const oddsAttempts = new Map(); // game id -> timestamp of last backfill attempt
 // Storage key is versioned so changing the chips resets everyone to the defaults.
 const FILTER_KEY = 'ua_filters_v3';
 let filters = new Set(store.get(FILTER_KEY, DEFAULT_FILTERS).filter(k => ALL_FILTERS.includes(k)));
@@ -69,7 +75,11 @@ function parseTeam(c, situation) {
 }
 
 function parseSpread(comp, home, away) {
-  const o = (comp.odds || [])[0];
+  return spreadFromOdds((comp.odds || [])[0], home, away);
+}
+
+// Shared by the scoreboard's inline odds and the per-game odds endpoint (same shape).
+function spreadFromOdds(o, home, away) {
   if (!o || typeof o.spread !== 'number') return null;
   let favId;
   if (o.homeTeamOdds && o.homeTeamOdds.favorite) favId = home.id;
@@ -328,6 +338,25 @@ async function checkForNewBuild() {
   } catch { /* offline or blocked: ignore */ }
 }
 
+async function backfillSpreads(list) {
+  const now = Date.now();
+  const missing = list.filter(g => !g.spread && now - (oddsAttempts.get(g.id) || 0) > ODDS_RETRY_MS);
+  if (!missing.length) return;
+  for (const g of missing) oddsAttempts.set(g.id, now);
+  const results = await Promise.allSettled(missing.map(async g => {
+    const res = await fetch(ODDS_URL(g.id), { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    const items = (await res.json()).items || [];
+    const o = items.find(i => i.provider && i.provider.id === '100') || items[0]; // prefer DraftKings
+    const spread = spreadFromOdds(o, g.home, g.away);
+    if (spread) { spreadCache[g.id] = spread; g.spread = spread; }
+  }));
+  if (results.some(r => r.status === 'fulfilled')) {
+    store.set('ua_spreads', spreadCache);
+    renderGames(games);
+  }
+}
+
 async function refresh() {
   if (inflight) return;
   inflight = true;
@@ -345,6 +374,7 @@ async function refresh() {
     els.week.textContent = `${wk ? `Week ${wk} · ` : ''}FBS scoreboard${DEMO ? ' · DEMO DATA' : ''}`;
     els.error.hidden = true;
     renderGames(games);
+    backfillSpreads(games); // async; re-renders when lines arrive
   } catch (err) {
     els.error.textContent = `Could not load scores: ${err.message}`;
     els.error.hidden = false;
