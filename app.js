@@ -235,6 +235,11 @@ function teamHtml(t, g, opponent) {
   </div>`;
 }
 
+function tierLabel(g) {
+  const t = tier(g);
+  return t === 1 ? 'One Score Game' : `${t} Score Game`;
+}
+
 function spreadText(g) {
   if (!g.spread) return 'No line';
   if (!g.spread.favId) return 'PK';
@@ -255,7 +260,7 @@ function cardHtml(g, upset, close) {
     <div class="status">${statusHtml(g)}</div>
     <div class="meta">
       <span class="spread">${esc(spreadText(g))}</span>
-      ${isLive(g) ? `<span class="tier">Tier ${tier(g)}</span>` : ''}
+      ${isLive(g) ? `<span class="tier">${tierLabel(g)}</span>` : ''}
       <span class="tv">${esc(g.tv || 'TV TBD')}</span>
     </div>`;
 }
