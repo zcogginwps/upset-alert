@@ -53,7 +53,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '11';
+const APP_VERSION = '12';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -410,10 +410,14 @@ async function checkForNewBuild() {
     const res = await fetch(`${VERSION_URL}?t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return;
     const { v } = await res.json();
-    if (v && v !== APP_VERSION && sessionStorage.getItem('ua_reloaded_for') !== v) {
-      sessionStorage.setItem('ua_reloaded_for', v); // one attempt per build, never a reload loop
-      location.reload();
-    }
+    if (!v || v === APP_VERSION) return;
+    if (sessionStorage.getItem('ua_reloaded_for') === v) return; // one attempt per build, never a loop
+    sessionStorage.setItem('ua_reloaded_for', v);
+    // Not location.reload(): the iOS home-screen app can answer that from its cached copy of
+    // index.html, which still points at the old script. A new query string forces a real fetch.
+    const url = new URL(location.href);
+    url.searchParams.set('v', v);
+    location.replace(url);
   } catch { /* offline or blocked: ignore */ }
 }
 
@@ -774,4 +778,8 @@ els.weekSelect.addEventListener('change', onWeekChange);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 
 renderFilters();
+{ // drop the cache-busting ?v= once the matching build is running
+  const url = new URL(location.href);
+  if (url.searchParams.get('v') === APP_VERSION) { url.searchParams.delete('v'); history.replaceState(null, '', url); }
+}
 refresh();
