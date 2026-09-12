@@ -25,6 +25,11 @@ const IDLE_POLL_MS = 60000;
 
 const DEMO = new URLSearchParams(location.search).has('demo');
 
+// Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
+// cache aggressively, so each poll also checks version.json and reloads when it changes.
+const APP_VERSION = '5';
+const VERSION_URL = 'version.json';
+
 // ---------- persistence ----------
 const store = {
   get(key, fallback) {
@@ -237,7 +242,7 @@ function teamHtml(t, g, opponent) {
 
 function tierLabel(g) {
   const t = tier(g);
-  return t === 1 ? 'One Score Game' : `${t} Score Game`;
+  return `${t} Score Game`;
 }
 
 function spreadText(g) {
@@ -311,10 +316,23 @@ let lastFetched = null;
 let pollTimer = null;
 let inflight = false;
 
+async function checkForNewBuild() {
+  try {
+    const res = await fetch(`${VERSION_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const { v } = await res.json();
+    if (v && v !== APP_VERSION && sessionStorage.getItem('ua_reloaded_for') !== v) {
+      sessionStorage.setItem('ua_reloaded_for', v); // one attempt per build, never a reload loop
+      location.reload();
+    }
+  } catch { /* offline or blocked: ignore */ }
+}
+
 async function refresh() {
   if (inflight) return;
   inflight = true;
   els.refreshBtn.classList.add('spin');
+  checkForNewBuild();
   try {
     const res = await fetch(ESPN_URL, { cache: 'no-store' });
     if (!res.ok) throw new Error(`ESPN responded ${res.status}`);
