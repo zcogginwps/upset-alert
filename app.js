@@ -53,7 +53,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '10';
+const APP_VERSION = '11';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -262,7 +262,6 @@ const els = {
   empty: byId('empty'),
   error: byId('error'),
   updated: byId('updated'),
-  week: byId('week-label'),
   weekSelect: byId('week-select'),
   refreshBtn: byId('refresh-btn'),
   chips: Array.from(document.querySelectorAll('.chip[data-conf]')),
@@ -459,15 +458,15 @@ async function refresh() {
     }));
     if (requested !== selectedWeek) return; // user changed weeks while this was in flight
     const data = feeds[0].data; // FBS feed carries the week/calendar info
-    const byId = new Map(); // event id -> { ev, levelKeys }
+    const merged = new Map(); // event id -> { ev, levelKeys }
     for (const { grp, data: d } of feeds) {
       for (const ev of d.events || []) {
-        const entry = byId.get(ev.id) || { ev, levelKeys: new Set() };
+        const entry = merged.get(ev.id) || { ev, levelKeys: new Set() };
         if (grp.key) entry.levelKeys.add(grp.key);
-        byId.set(ev.id, entry);
+        merged.set(ev.id, entry);
       }
     }
-    games = [...byId.values()].map(({ ev, levelKeys }) => parseEvent(ev, levelKeys))
+    games = [...merged.values()].map(({ ev, levelKeys }) => parseEvent(ev, levelKeys))
       .filter(g => g.confKeys.size > 0);
     if (DEMO) games = applyDemo(games);
     store.set('ua_spreads', spreadCache);
@@ -477,7 +476,7 @@ async function refresh() {
     }
     if (!calendar.length) buildCalendar(data);
     renderWeekSelect();
-    els.week.textContent = `· College football${DEMO ? ' · DEMO DATA' : ''}`;
+    byId('demo-badge').hidden = !DEMO;
     els.error.hidden = true;
     renderGames(games);
     backfillSpreads(games); // async; re-renders when lines arrive
@@ -517,8 +516,7 @@ function renderWeekSelect() {
   }
   sel.innerHTML = calendar.map(c => {
     const value = c.type === 3 ? 'bowls' : String(c.week);
-    const label = sameWeek(c, currentWeek) ? `${c.label} (this week)` : c.label;
-    return `<option value="${value}"${sameWeek(c, active) ? ' selected' : ''}>${esc(label)}</option>`;
+    return `<option value="${value}"${sameWeek(c, active) ? ' selected' : ''}>${esc(c.label)}</option>`;
   }).join('');
 }
 
