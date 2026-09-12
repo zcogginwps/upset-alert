@@ -50,6 +50,19 @@ body {
 }
 .chip.on { background: var(--chip-on); color: #1a1400; border-color: var(--chip-on); }
 .chip.all { border-style: dashed; }
+.chip.fav.on { background: var(--accent); }
+
+/* Favorite star, top-right of every card */
+.star {
+  position: absolute; top: 4px; right: 6px; z-index: 1;
+  background: none; border: 0; padding: 4px; cursor: pointer; line-height: 0;
+  color: var(--muted); opacity: .7; -webkit-tap-highlight-color: transparent;
+}
+.star svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.star.on { color: var(--accent); opacity: 1; }
+.star.on svg { fill: currentColor; }
+.card.upset .star, .card.close:not(.upset) .star { color: #fff; }
+.card.upset .star.on, .card.close:not(.upset) .star.on { color: var(--accent); }
 .refresh { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .refresh button {
   border: 1px solid var(--line); background: var(--chip); color: var(--text);
@@ -73,7 +86,7 @@ body {
 .card {
   position: relative;
   background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-  padding: 10px 12px 9px;
+  padding: 12px 12px 9px;
   display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto;
   column-gap: 10px;
   transition: border-color .2s;
@@ -92,7 +105,7 @@ body {
 .card.pre .team .score { display: none; }
 
 .status {
-  grid-column: 2; grid-row: 1; align-self: center;
+  grid-column: 2; grid-row: 1; align-self: center; margin-top: 14px;
   text-align: right; font-weight: 700; font-size: 14px; min-width: 64px;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }

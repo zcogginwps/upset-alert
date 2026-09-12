@@ -30,8 +30,8 @@ const CONF_KEYS = {
   '8': 'sec', '5': 'b1g', '4': 'b12', '1': 'acc', '18': 'ind',
   '151': 'fbs', '12': 'fbs', '15': 'fbs', '17': 'fbs', '9': 'fbs', '37': 'fbs',
 };
-const ALL_FILTERS = ['sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
-const DEFAULT_FILTERS = ['sec', 'b1g', 'b12', 'acc']; // Power 4 only until the user opts in
+const ALL_FILTERS = ['fav', 'sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
+const DEFAULT_FILTERS = ['fav', 'sec', 'b1g', 'b12', 'acc']; // Power 4 (+ starred games) until the user opts in
 
 const UPSET_MIN_SPREAD = 7;     // favorite must be laying MORE than this
 const CLOSE_MAX_DIFF = 8;       // one-score game
@@ -45,7 +45,7 @@ const DEMO = new URLSearchParams(location.search).has('demo');
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '7';
+const APP_VERSION = '8';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -69,9 +69,17 @@ const ODDS_URL = id =>
 const ODDS_RETRY_MS = 10 * 60 * 1000;
 const oddsAttempts = new Map(); // game id -> timestamp of last backfill attempt
 // Storage key is versioned so changing the chips resets everyone to the defaults.
-const FILTER_KEY = 'ua_filters_v3';
+const FILTER_KEY = 'ua_filters_v4';
 let filters = new Set(store.get(FILTER_KEY, DEFAULT_FILTERS).filter(k => ALL_FILTERS.includes(k)));
 if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
+
+// Starred games, by ESPN game id. Starred games jump to the top while live only.
+const favorites = new Set(store.get('ua_favs', []));
+function toggleFavorite(id) {
+  if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
+  store.set('ua_favs', [...favorites]);
+  renderGames(games);
+}
 
 // ---------- parsing ----------
 function parseTeam(c, situation) {
@@ -192,8 +200,9 @@ function compareGames(a, b) {
   if (ba !== bb) return ba - bb;
 
   if (ba === 0) {
-    // Live: closest tier first, then least time left, then raw margin.
-    return tier(a) - tier(b) || secondsLeft(a) - secondsLeft(b) || diff(a) - diff(b);
+    // Live: starred games first, then closest tier, then least time left, then raw margin.
+    return favorites.has(b.id) - favorites.has(a.id)
+      || tier(a) - tier(b) || secondsLeft(a) - secondsLeft(b) || diff(a) - diff(b);
   }
   if (ba === 1) {
     // Upcoming: kickoff, then smallest spread, then better-ranked matchup.
@@ -281,12 +290,15 @@ function spreadText(g) {
   return `${fav.abbr} -${g.spread.points}`;
 }
 
-function cardHtml(g, upset, close) {
+const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.7l-5.9 3.1 1.2-6.5L2.5 9.7l6.6-.9z"/></svg>';
+
+function cardHtml(g, upset, close, fav) {
   const badges = [];
   if (upset) badges.push('<span class="badge upset">Upset alert</span>');
   if (close) badges.push('<span class="badge close">Close game</span>');
   return `
     ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
+    <button class="star${fav ? ' on' : ''}" aria-label="${fav ? 'Remove from favorites' : 'Add to favorites'}" aria-pressed="${fav}">${STAR_SVG}</button>
     <div class="teams">
       ${teamHtml(g.away, g, g.home)}
       ${teamHtml(g.home, g, g.away)}
@@ -300,7 +312,8 @@ function cardHtml(g, upset, close) {
 }
 
 function renderGames(games) {
-  const visible = games.filter(g => [...g.confKeys].some(k => filters.has(k)));
+  const visible = games.filter(g =>
+    [...g.confKeys].some(k => filters.has(k)) || (filters.has('fav') && favorites.has(g.id)));
   visible.sort(compareGames);
 
   const seen = new Set();
@@ -310,8 +323,8 @@ function renderGames(games) {
   for (const state of ['in', 'pre', 'post']) {
     const list = els.lists[state];
     for (const g of perBucket[state]) {
-      const upset = isUpsetAlert(g), close = isCloseGame(g);
-      const html = cardHtml(g, upset, close);
+      const upset = isUpsetAlert(g), close = isCloseGame(g), fav = favorites.has(g.id);
+      const html = cardHtml(g, upset, close, fav);
       let entry = cardEls.get(g.id);
       if (!entry) {
         const el = document.createElement('article');
@@ -524,6 +537,10 @@ els.chipAll.addEventListener('click', () => {
   renderGames(games);
 });
 els.refreshBtn.addEventListener('click', refresh);
+byId('board').addEventListener('click', e => {
+  const star = e.target.closest('.star');
+  if (star) toggleFavorite(star.closest('.card').dataset.id);
+});
 els.weekSelect.addEventListener('change', onWeekChange);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 
