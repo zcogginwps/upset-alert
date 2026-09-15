@@ -38,13 +38,13 @@ body {
 .demo-badge { font-size: 10px; font-weight: 800; background: var(--accent); color: #1a1400; border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
 .demo-badge[hidden] { display: none; }
 #week-select {
-  appearance: none; -webkit-appearance: none; min-width: 0;
+  appearance: none; -webkit-appearance: none; min-width: 0; flex: 1 1 auto; /* fills the gap before the Teams button */
   background: var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b93a7' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;
   color: var(--text); border: 1px solid var(--line); border-radius: 8px;
   padding: 5px 22px 5px 9px; font: inherit; font-weight: 700; font-size: 12.5px; cursor: pointer;
 }
 .menu-btn {
-  flex: none; margin-left: auto;
+  flex: none;
   border: 1px solid var(--line); background: var(--chip); color: var(--text);
   border-radius: 8px; padding: 5px 9px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
   white-space: nowrap;
