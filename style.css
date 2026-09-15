@@ -7,10 +7,13 @@
   --muted: #8b93a7;
   --accent: #ffd166;
   --live: #ff3b4d;
-  --upset: #d1001f;
-  --upset-dim: #3a0810;
-  --close-a: #0b5fd6;
-  --close-b: #0f9d58;
+  --upset: #8a1a2a;      /* alert flashes run between these and their -dim partners */
+  --upset-dim: #2d1218;
+  --close: #146b45;
+  --close-dim: #12271e;
+  --comeback: #1b4f9c;
+  --comeback-dim: #142238;
+  --new: #5b6478;
   --chip: #232a3a;
   --chip-on: #ffd166;
 }
@@ -74,8 +77,6 @@ body {
 .star svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
 .star.on { color: var(--accent); opacity: 1; }
 .star.on svg { fill: currentColor; }
-.card.upset .star, .card.close:not(.upset) .star { color: #fff; }
-.card.upset .star.on, .card.close:not(.upset) .star.on { color: var(--accent); }
 
 /* Groups */
 .group { margin-top: 18px; }
@@ -135,50 +136,43 @@ body {
   font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
   padding: 2px 8px; border-radius: 999px; color: #fff;
 }
-.badge.upset { background: var(--upset); }
-.badge.close { background: var(--close-a); }
 
-/* Alerts */
-.card.upset {
-  animation: upset-blink .9s steps(1, end) infinite;
-  border-color: var(--live);
-}
-@keyframes upset-blink {
-  0%, 49% { background: var(--upset); }
-  50%, 100% { background: var(--upset-dim); }
-}
-.card.upset .team .rec, .card.upset .meta, .card.upset .status .clock { color: rgba(255,255,255,.8); }
-.card.upset .meta { border-top-color: rgba(255,255,255,.25); }
-.card.upset .team .rank { color: #fff; }
+/* Alerts: one slow, soft flash per state so it registers without demanding attention */
+.badge.upset { background: #c8102e; }
+.badge.close { background: #12925a; }
+.badge.comeback { background: #2f6fd6; }
+.badge.new { background: var(--new); }
 
-.card.close:not(.upset) {
-  animation: close-flash 1.6s ease-in-out infinite;
-  border-color: #7fb6ff;
-}
-@keyframes close-flash {
-  0%, 100% { background: var(--close-a); }
-  50% { background: var(--close-b); }
-}
-.card.close:not(.upset) .team .rec, .card.close:not(.upset) .meta, .card.close:not(.upset) .status .clock,
-.card.close:not(.upset) .status .clock { color: rgba(255,255,255,.85); }
-.card.close:not(.upset) .meta { border-top-color: rgba(255,255,255,.25); }
-.card.close:not(.upset) .status .q, .card.close:not(.upset) .team .rank { color: #fff; }
+.card.upset, .card.close, .card.comeback { border-color: rgba(255,255,255,.25); }
+.card.upset { animation: upset-flash 2s ease-in-out infinite; }
+.card.close { animation: close-flash 1.6s ease-in-out infinite; }
+.card.comeback { animation: comeback-flash 1.8s ease-in-out infinite; }
+@keyframes upset-flash    { 0%, 100% { background: var(--upset-dim); }    50% { background: var(--upset); } }
+@keyframes close-flash    { 0%, 100% { background: var(--close-dim); }    50% { background: var(--close); } }
+@keyframes comeback-flash { 0%, 100% { background: var(--comeback-dim); } 50% { background: var(--comeback); } }
 
-@media (max-width: 480px) {
-  .menu-btn .long { display: none; }
-}
-@media (max-width: 400px) {
-  .team .name { font-size: 15px; }
-  .team .rec { font-size: 11px; }
-  .team .score { font-size: 20px; min-width: 28px; }
-  .status { min-width: 56px; }
-}
+.card.upset .team .rec, .card.upset .meta, .card.upset .status .clock,
+.card.close .team .rec, .card.close .meta, .card.close .status .clock,
+.card.comeback .team .rec, .card.comeback .meta, .card.comeback .status .clock { color: rgba(255,255,255,.8); }
+.card.upset .meta, .card.close .meta, .card.comeback .meta { border-top-color: rgba(255,255,255,.2); }
+.card.upset .team .rank, .card.close .team .rank, .card.comeback .team .rank,
+.card.close .status .q, .card.comeback .status .q { color: #fff; }
+.card.upset .star, .card.close .star, .card.comeback .star { color: #fff; }
+.card.upset .star.on, .card.close .star.on, .card.comeback .star.on { color: var(--accent); }
+
+/* New game: parked at the bottom of Live for its first two minutes */
+.card.newgame { border-style: dashed; }
+.card.newgame .status .q { color: var(--muted); }
+
+/* Reorder slide: a moving card rides above its neighbours while it glides */
+.card.moving { z-index: 3; will-change: transform; }
 
 /* Footer, states */
 .legend { margin-top: 26px; color: var(--muted); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
-.swatch.upset { background: var(--upset); }
-.swatch.close { background: linear-gradient(90deg, var(--close-a), var(--close-b)); }
+.swatch.upset { background: #c8102e; }
+.swatch.close { background: #12925a; }
+.swatch.comeback { background: #2f6fd6; }
 .empty, .error { color: var(--muted); text-align: center; margin-top: 40px; }
 .error { color: #ff8a94; }
 

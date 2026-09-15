@@ -45,15 +45,21 @@ const UPSET_MIN_SPREAD = 7;     // favorite must be laying MORE than this
 const CLOSE_MAX_DIFF = 8;       // one-score game
 const CLOSE_SECONDS_LEFT = 360; // under 6:00 to go
 const TIER_SIZE = 8;
+const COMEBACK_CUT = 16;        // lead has shrunk by 2+ scores...
+const COMEBACK_MAX_DIFF = 16;   // ...and the game is now within 2 scores
+const NEW_GAME_CLOCK = 780;     // first 2:00 of Q1 (clock >= 13:00) sits at the bottom as "new game"
+const REORDER_MS = 1500;        // how slowly cards slide when the order changes
 
 const LIVE_POLL_MS = 15000;
 const IDLE_POLL_MS = 60000;
 
 const DEMO = new URLSearchParams(location.search).has('demo');
+// ?demo=shuffle also nudges scores every few seconds so the reorder slide can be watched.
+const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuffle';
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '13';
+const APP_VERSION = '14';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -80,6 +86,32 @@ const oddsAttempts = new Map(); // game id -> timestamp of last backfill attempt
 const FILTER_KEY = 'ua_filters_v4';
 let filters = new Set(store.get(FILTER_KEY, DEFAULT_FILTERS).filter(k => ALL_FILTERS.includes(k)));
 if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
+
+// Biggest lead seen in each game, for the comeback watch. Seeded from ESPN's per-quarter
+// line scores (so someone opening the app mid-game still gets it) and then updated from
+// every live score we observe. Persisted so an auto-reload does not forget it.
+const peakLeads = store.get('ua_peaks', {}); // game id -> { teamId, lead, at }
+function notePeak(g, teamId, lead) {
+  const cur = peakLeads[g.id];
+  if (!cur || lead > cur.lead) peakLeads[g.id] = { teamId, lead, at: Date.now() };
+}
+function trackPeakLead(g, homeLines, awayLines) {
+  if (g.state === 'pre') return;
+  let h = 0, a = 0;
+  const n = Math.min(homeLines.length, awayLines.length);
+  for (let i = 0; i < n; i++) {
+    h += homeLines[i]; a += awayLines[i];
+    if (h !== a) notePeak(g, h > a ? g.home.id : g.away.id, Math.abs(h - a));
+  }
+  if (g.home.score !== g.away.score) {
+    notePeak(g, g.home.score > g.away.score ? g.home.id : g.away.id, diff(g));
+  }
+  if (!peakLeads[g.id]) peakLeads[g.id] = { teamId: null, lead: 0, at: Date.now() };
+}
+function prunePeaks() {
+  const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+  for (const id of Object.keys(peakLeads)) if ((peakLeads[id].at || 0) < cutoff) delete peakLeads[id];
+}
 
 // Favorites come from two places: games starred directly (by ESPN game id) and favorite
 // teams (every game they play is starred automatically, week after week). Un-starring a
@@ -133,6 +165,7 @@ function parseTeam(c, situation) {
     score: Number(c.score) || 0,
     confId: t.conferenceId,
     possession: !!(situation && situation.possession === t.id),
+    lines: (c.linescores || []).map(l => Number(l.value) || 0), // points per quarter
   };
 }
 
@@ -181,7 +214,7 @@ function parseEvent(ev, levelKeys) {
   const nonFbs = [home, away].filter(t => !CONF_KEYS[t.confId]).length;
   if (nonFbs) for (const k of levelKeys) confKeys.add(k);
 
-  return {
+  const g = {
     id: ev.id,
     date: new Date(ev.date),
     state: st.type.state,           // pre | in | post
@@ -194,6 +227,8 @@ function parseEvent(ev, levelKeys) {
     tv: parseBroadcast(comp),
     confKeys,
   };
+  trackPeakLead(g, home.lines, away.lines);
+  return g;
 }
 
 // ---------- game math ----------
@@ -227,6 +262,31 @@ function isUpsetAlert(g) {
 
 function isCloseGame(g) {
   return isLive(g) && diff(g) <= CLOSE_MAX_DIFF && secondsLeft(g) < CLOSE_SECONDS_LEFT;
+}
+
+// A team that led by a lot has given most of it back: their lead has shrunk by two scores
+// or more (going from ahead to behind counts) and the game is now within two scores.
+function isComebackWatch(g) {
+  if (!isLive(g) || diff(g) > COMEBACK_MAX_DIFF) return false;
+  const peak = peakLeads[g.id];
+  if (!peak || !peak.teamId) return false;
+  const leadNow = peak.teamId === g.home.id ? g.home.score - g.away.score : g.away.score - g.home.score;
+  return peak.lead - leadNow >= COMEBACK_CUT;
+}
+
+// ESPN sometimes flags a game "in progress" before kickoff, so a brand-new game would
+// otherwise rocket to the top as a 0-0 one-score game. Hold it at the bottom of Live for
+// the first two minutes of game clock instead.
+function isNewGame(g) {
+  return isLive(g) && g.period <= 1 && g.clock >= NEW_GAME_CLOCK;
+}
+
+// At quarter breaks ESPN's clock flips between 0:00 and 15:00 (and the period number can
+// lag or lead), which briefly scrambles the time-left math. Games in that state keep
+// whatever spot they already had. Halftime and overtime read 0:00 legitimately.
+function isClockUnstable(g) {
+  if (!isLive(g) || g.period < 1 || g.period > 4 || g.statusName === 'STATUS_HALFTIME') return false;
+  return g.clock === 0 || g.clock === 900;
 }
 
 function bestRanks(g) {
@@ -343,10 +403,12 @@ function spreadText(g) {
 
 const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.7l-5.9 3.1 1.2-6.5L2.5 9.7l6.6-.9z"/></svg>';
 
-function cardHtml(g, upset, close, fav) {
+function cardHtml(g, flags, fav) {
   const badges = [];
-  if (upset) badges.push('<span class="badge upset">Upset alert</span>');
-  if (close) badges.push('<span class="badge close">Close game</span>');
+  if (flags.upset) badges.push('<span class="badge upset">Upset alert</span>');
+  if (flags.close) badges.push('<span class="badge close">Close game</span>');
+  if (flags.comeback) badges.push('<span class="badge comeback">Comeback watch</span>');
+  if (flags.newGame) badges.push('<span class="badge new">New game</span>');
   return `
     ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
     <button class="star${fav ? ' on' : ''}" aria-label="${fav ? 'Remove from favorites' : 'Add to favorites'}" aria-pressed="${fav}">${STAR_SVG}</button>
@@ -362,21 +424,51 @@ function cardHtml(g, upset, close, fav) {
     </div>`;
 }
 
+// Live-list order from the previous render, so games with an unstable clock can hold
+// their spot, and the on-screen positions of every card, so reorders can be animated.
+let prevLiveOrder = new Map(); // game id -> index within the live list
+let hasRendered = false;
+let suppressNextSlide = false; // set when the tab comes back from the background
+
+function orderLive(live) {
+  const newGames = live.filter(isNewGame).sort((a, b) => a.date - b.date);
+  const frozen = live.filter(g => !isNewGame(g) && isClockUnstable(g) && prevLiveOrder.has(g.id));
+  const rest = live.filter(g => !newGames.includes(g) && !frozen.includes(g)).sort(compareGames);
+  // Put frozen games back at the index they held last time (lowest index first so the
+  // positions stay meaningful), then park the new games at the bottom.
+  for (const g of frozen.sort((a, b) => prevLiveOrder.get(a.id) - prevLiveOrder.get(b.id))) {
+    rest.splice(Math.min(prevLiveOrder.get(g.id), rest.length), 0, g);
+  }
+  return rest.concat(newGames);
+}
+
 function renderGames(games) {
   const visible = games.filter(g =>
     [...g.confKeys].some(k => filters.has(k)) || (filters.has('fav') && isFavoriteGame(g)));
   weekComplete = visible.length > 0 && visible.every(isDone);
-  visible.sort(compareGames);
 
-  const seen = new Set();
   const perBucket = { in: [], pre: [], post: [] };
   for (const g of visible) (perBucket[g.state] || perBucket.pre).push(g);
+  perBucket.in = orderLive(perBucket.in);
+  perBucket.pre.sort(compareGames);
+  perBucket.post.sort(compareGames);
+  prevLiveOrder = new Map(perBucket.in.map((g, i) => [g.id, i]));
 
+  // Remember where every existing card sits before the DOM changes (FLIP animation).
+  const animate = hasRendered && !suppressNextSlide && !document.hidden;
+  const before = new Map();
+  if (animate) for (const [id, entry] of cardEls) before.set(id, entry.el.getBoundingClientRect());
+  suppressNextSlide = false;
+
+  const seen = new Set();
   for (const state of ['in', 'pre', 'post']) {
     const list = els.lists[state];
     for (const g of perBucket[state]) {
-      const upset = isUpsetAlert(g), close = isCloseGame(g), fav = isFavoriteGame(g);
-      const html = cardHtml(g, upset, close, fav);
+      const flags = {
+        upset: isUpsetAlert(g), close: isCloseGame(g), comeback: isComebackWatch(g), newGame: isNewGame(g),
+      };
+      const fav = isFavoriteGame(g);
+      const html = cardHtml(g, flags, fav);
       let entry = cardEls.get(g.id);
       if (!entry) {
         const el = document.createElement('article');
@@ -385,8 +477,10 @@ function renderGames(games) {
         cardEls.set(g.id, entry);
       }
       if (entry.html !== html) { entry.el.innerHTML = html; entry.html = html; }
-      // Toggling classes (not rebuilding nodes) keeps the blink animation from restarting on every poll.
-      entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${upset ? ' upset' : ''}${close ? ' close' : ''}`;
+      // Toggling classes (not rebuilding nodes) keeps the flash animation from restarting on every poll.
+      // One flash colour per card: upset beats close beats comeback; badges still show all of them.
+      const flash = flags.upset ? ' upset' : flags.close ? ' close' : flags.comeback ? ' comeback' : '';
+      entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${flash}${flags.newGame ? ' newgame' : ''}${entry.el.classList.contains('moving') ? ' moving' : ''}`;
       list.appendChild(entry.el); // appendChild moves an existing node, so this also reorders
       seen.add(g.id);
     }
@@ -397,6 +491,32 @@ function renderGames(games) {
     if (!seen.has(id)) { entry.el.remove(); cardEls.delete(id); }
   }
   els.empty.hidden = visible.length > 0;
+  hasRendered = true;
+  if (animate) slideMovedCards(before);
+}
+
+// Cards that changed position glide from where they were to where they are now, so a
+// reorder is something you can watch rather than a jump cut.
+function slideMovedCards(before) {
+  for (const [id, entry] of cardEls) {
+    const was = before.get(id);
+    if (!was) continue; // brand-new card: just appears in place
+    const now = entry.el.getBoundingClientRect();
+    const dx = was.left - now.left, dy = was.top - now.top;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) continue;
+    const el = entry.el;
+    el.style.transition = 'none';
+    el.style.transform = `translate(${dx}px, ${dy}px)`;
+    el.classList.add('moving');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transition = `transform ${REORDER_MS}ms cubic-bezier(.25, .8, .25, 1)`;
+      el.style.transform = '';
+    }));
+    clearTimeout(el._moveTimer);
+    el._moveTimer = setTimeout(() => {
+      el.style.transition = ''; el.style.transform = ''; el.classList.remove('moving');
+    }, REORDER_MS + 50);
+  }
 }
 
 function renderFilters() {
@@ -480,6 +600,8 @@ async function refresh() {
       .filter(g => g.confKeys.size > 0);
     if (DEMO) games = applyDemo(games);
     store.set('ua_spreads', spreadCache);
+    prunePeaks();
+    store.set('ua_peaks', peakLeads);
     lastFetched = new Date();
     if (!currentWeek && data.week && data.season) {
       currentWeek = { type: data.season.type, week: data.week.number };
@@ -573,6 +695,9 @@ function applyDemo(list) {
     [3, 800, 'STATUS_IN_PROGRESS', 3, 45],
     [4, 40,  'STATUS_IN_PROGRESS', 21, 21],
     [2, 500, 'STATUS_IN_PROGRESS', 28, 7],
+    [3, 600, 'STATUS_IN_PROGRESS', 24, 27],  // comeback watch: home led 27-3, now 27-24
+    [1, 870, 'STATUS_IN_PROGRESS', 0, 0],    // new game: 14:30 in Q1
+    [2, 0,   'STATUS_END_PERIOD',  10, 14],  // unstable clock: end of Q2, holds its spot
   ];
   pre.slice(0, scripts.length).forEach((g, i) => {
     const [period, clock, statusName, a, h] = scripts[i];
@@ -586,6 +711,7 @@ function applyDemo(list) {
       g.away.score = dogIsHome ? Math.min(a, h) : Math.max(a, h);
     } else { g.away.score = a; g.home.score = h; }
     g.home.possession = i % 2 === 0; g.away.possession = !g.home.possession;
+    if (i === 10) peakLeads[g.id] = { teamId: g.home.id, lead: 24, at: Date.now() };
   });
   pre.slice(scripts.length, scripts.length + 3).forEach(g => {
     g.state = 'post'; g.period = 4; g.statusName = 'STATUS_FINAL';
@@ -758,6 +884,24 @@ els.panel.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !els.panel.hidden) closePanel(); });
 els.favTeamsBtn.classList.toggle('has-teams', favTeams.length > 0);
 
+// Demo shuffle: every few seconds one live game scores or its clock runs, so the cards
+// visibly trade places.
+if (DEMO_SHUFFLE) {
+  setInterval(() => {
+    const live = games.filter(g => isLive(g) && !isNewGame(g) && g.period <= 4);
+    if (live.length < 2) return;
+    const g = live[Math.floor(Math.random() * live.length)];
+    if (Math.random() < 0.5) {
+      const team = Math.random() < 0.5 ? g.home : g.away;
+      team.score += Math.random() < 0.7 ? 7 : 3;
+    } else {
+      g.clock = Math.max(1, g.clock - 300);
+      g.displayClock = `${Math.floor(g.clock / 60)}:${String(g.clock % 60).padStart(2, '0')}`;
+    }
+    renderGames(games);
+  }, 6000);
+}
+
 // ---------- wiring ----------
 for (const chip of els.chips) {
   chip.addEventListener('click', () => {
@@ -781,7 +925,9 @@ byId('board').addEventListener('click', e => {
   if (star) toggleFavorite(star.closest('.card').dataset.id);
 });
 els.weekSelect.addEventListener('change', onWeekChange);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { suppressNextSlide = true; refresh(); } // coming back counts as a fresh look, no slide show
+});
 
 renderFilters();
 { // drop the cache-busting ?v= once the matching build is running
