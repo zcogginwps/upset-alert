@@ -1,4 +1,4 @@
-/* Upset Alert — FBS college football scoreboard.
+/* Quad Box Buddy (QBB) — college football scoreboard that tells you what to watch.
  * Data comes straight from ESPN's public scoreboard feed (no key needed). */
 
 const ESPN_BASE =
@@ -60,7 +60,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '15';
+const APP_VERSION = '16';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------

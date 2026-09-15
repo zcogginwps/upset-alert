@@ -165,6 +165,19 @@ body {
 /* Reorder slide: a moving card rides above its neighbours while it glides */
 .card.moving { z-index: 3; will-change: transform; }
 
+.bar h1 .name-short { display: none; }
+@media (max-width: 520px) {
+  .menu-btn .long { display: none; }
+  .bar h1 .name-long { display: none; }
+  .bar h1 .name-short { display: inline; }
+}
+@media (max-width: 400px) {
+  .team .name { font-size: 15px; }
+  .team .rec { font-size: 11px; }
+  .team .score { font-size: 20px; min-width: 28px; }
+  .status { min-width: 56px; }
+}
+
 /* Footer, states */
 .legend { margin-top: 26px; color: var(--muted); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }

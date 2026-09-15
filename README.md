@@ -1,4 +1,4 @@
-# Upset Alert
+# Quad Box Buddy (QBB)
 
 Personal college-football scoreboard covering FBS, FCS and Division II, ordered so the games
 worth watching float to the top. Filter chips: Favorites, SEC, Big Ten, Big 12, ACC,
