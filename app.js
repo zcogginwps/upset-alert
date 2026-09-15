@@ -60,7 +60,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '17';
+const APP_VERSION = '18';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -660,9 +660,9 @@ function buildCalendar(data) {
   for (const block of (league && league.calendar) || []) {
     const type = Number(block.value);
     if (type === 2) {
-      for (const e of block.entries || []) calendar.push({ type, week: Number(e.value), label: e.label });
+      for (const e of block.entries || []) calendar.push({ type, week: Number(e.value), label: `Wk ${e.value}` });
     } else if (type === 3) {
-      calendar.push({ type, week: 1, label: 'Bowls & Playoff' });
+      calendar.push({ type, week: 1, label: 'Bowls' });
     }
   }
 }
@@ -673,7 +673,7 @@ function renderWeekSelect() {
   const sel = els.weekSelect;
   const active = selectedWeek || currentWeek;
   if (!calendar.length) {
-    sel.innerHTML = `<option>${active ? `Week ${active.week}` : 'This week'}</option>`;
+    sel.innerHTML = `<option>${active ? `Wk ${active.week}` : 'This wk'}</option>`;
     return;
   }
   sel.innerHTML = calendar.map(c => {

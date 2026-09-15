@@ -165,11 +165,9 @@ body {
 /* Reorder slide: a moving card rides above its neighbours while it glides */
 .card.moving { z-index: 3; will-change: transform; }
 
-.bar h1 .name-short { display: none; }
 @media (max-width: 520px) {
   .menu-btn .long { display: none; }
-  .bar h1 .name-long { display: none; }
-  .bar h1 .name-short { display: inline; }
+  .bar h1 { font-size: 18px; }
 }
 @media (max-width: 400px) {
   .team .name { font-size: 15px; }
