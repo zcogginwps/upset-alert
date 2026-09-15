@@ -137,28 +137,26 @@ body {
   padding: 2px 8px; border-radius: 999px; color: #fff;
 }
 
-/* Alerts: one slow, soft flash per state so it registers without demanding attention */
+/* Alerts: every alert pulses on the same 2s clock. One alert fades between its dim and
+   full colour; two alerts fade between their two colours (--fa / --fb). */
 .badge.upset { background: #c8102e; }
 .badge.close { background: #12925a; }
 .badge.comeback { background: #2f6fd6; }
 .badge.new { background: var(--new); }
 
-.card.upset, .card.close, .card.comeback { border-color: rgba(255,255,255,.25); }
-.card.upset { animation: upset-flash 2s ease-in-out infinite; }
-.card.close { animation: close-flash 1.6s ease-in-out infinite; }
-.card.comeback { animation: comeback-flash 1.8s ease-in-out infinite; }
-@keyframes upset-flash    { 0%, 100% { background: var(--upset-dim); }    50% { background: var(--upset); } }
-@keyframes close-flash    { 0%, 100% { background: var(--close-dim); }    50% { background: var(--close); } }
-@keyframes comeback-flash { 0%, 100% { background: var(--comeback-dim); } 50% { background: var(--comeback); } }
+.card.flash { animation: flash 2s ease-in-out infinite; border-color: rgba(255,255,255,.25); }
+@keyframes flash { 0%, 100% { background: var(--fa); } 50% { background: var(--fb); } }
+.f-upset          { --fa: var(--upset-dim);    --fb: var(--upset); }
+.f-close          { --fa: var(--close-dim);    --fb: var(--close); }
+.f-comeback       { --fa: var(--comeback-dim); --fb: var(--comeback); }
+.f-upset-close    { --fa: var(--upset);        --fb: var(--close); }
+.f-upset-comeback { --fa: var(--upset);        --fb: var(--comeback); }
+.f-close-comeback { --fa: var(--close);        --fb: var(--comeback); }
 
-.card.upset .team .rec, .card.upset .meta, .card.upset .status .clock,
-.card.close .team .rec, .card.close .meta, .card.close .status .clock,
-.card.comeback .team .rec, .card.comeback .meta, .card.comeback .status .clock { color: rgba(255,255,255,.8); }
-.card.upset .meta, .card.close .meta, .card.comeback .meta { border-top-color: rgba(255,255,255,.2); }
-.card.upset .team .rank, .card.close .team .rank, .card.comeback .team .rank,
-.card.close .status .q, .card.comeback .status .q { color: #fff; }
-.card.upset .star, .card.close .star, .card.comeback .star { color: #fff; }
-.card.upset .star.on, .card.close .star.on, .card.comeback .star.on { color: var(--accent); }
+.card.flash .team .rec, .card.flash .meta, .card.flash .status .clock { color: rgba(255,255,255,.8); }
+.card.flash .meta { border-top-color: rgba(255,255,255,.2); }
+.card.flash .team .rank, .card.flash .status .q, .card.flash .star { color: #fff; }
+.card.flash .star.on { color: var(--accent); }
 
 /* New game: parked at the bottom of Live for its first two minutes */
 .card.newgame { border-style: dashed; }

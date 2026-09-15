@@ -49,6 +49,7 @@ const COMEBACK_CUT = 16;        // lead has shrunk by 2+ scores...
 const COMEBACK_MAX_DIFF = 16;   // ...and the game is now within 2 scores
 const NEW_GAME_CLOCK = 780;     // first 2:00 of Q1 (clock >= 13:00) sits at the bottom as "new game"
 const REORDER_MS = 1500;        // how slowly cards slide when the order changes
+const FLASH_MS = 2000;          // one pulse for every alert colour (keep in sync with style.css)
 
 const LIVE_POLL_MS = 15000;
 const IDLE_POLL_MS = 60000;
@@ -59,7 +60,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '14';
+const APP_VERSION = '15';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -111,6 +112,7 @@ function trackPeakLead(g, homeLines, awayLines) {
 function prunePeaks() {
   const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
   for (const id of Object.keys(peakLeads)) if ((peakLeads[id].at || 0) < cutoff) delete peakLeads[id];
+  for (const id of Object.keys(comebackState)) if ((comebackState[id].at || 0) < cutoff) delete comebackState[id];
 }
 
 // Favorites come from two places: games starred directly (by ESPN game id) and favorite
@@ -266,12 +268,32 @@ function isCloseGame(g) {
 
 // A team that led by a lot has given most of it back: their lead has shrunk by two scores
 // or more (going from ahead to behind counts) and the game is now within two scores.
-function isComebackWatch(g) {
+function comebackQualifies(g) {
   if (!isLive(g) || diff(g) > COMEBACK_MAX_DIFF) return false;
   const peak = peakLeads[g.id];
   if (!peak || !peak.teamId) return false;
   const leadNow = peak.teamId === g.home.id ? g.home.score - g.away.score : g.away.score - g.home.score;
   return peak.lead - leadNow >= COMEBACK_CUT;
+}
+
+// The watch switches off if the comeback stalls: once on, the game's tier is tracked and
+// the moment it climbs back above the closest tier it reached, the alert is dropped. It
+// only re-arms if the game later gets closer than it ever was during the last run.
+const comebackState = store.get('ua_cb', {}); // game id -> { on, minTier, at }
+function isComebackWatch(g) {
+  const st = comebackState[g.id] || { on: false, minTier: Infinity, at: Date.now() };
+  const t = tier(g);
+  if (!comebackQualifies(g)) {
+    st.on = false;
+  } else if (st.on) {
+    if (t < st.minTier) st.minTier = t;
+    else if (t > st.minTier) st.on = false; // stalled: went back up a tier
+  } else if (t < st.minTier) {
+    st.on = true; st.minTier = t;          // new run, or the game got closer than the last run ever was
+  }
+  st.at = Date.now();
+  comebackState[g.id] = st;
+  return st.on;
 }
 
 // ESPN sometimes flags a game "in progress" before kickoff, so a brand-new game would
@@ -478,9 +500,16 @@ function renderGames(games) {
       }
       if (entry.html !== html) { entry.el.innerHTML = html; entry.html = html; }
       // Toggling classes (not rebuilding nodes) keeps the flash animation from restarting on every poll.
-      // One flash colour per card: upset beats close beats comeback; badges still show all of them.
-      const flash = flags.upset ? ' upset' : flags.close ? ' close' : flags.comeback ? ' comeback' : '';
+      // One alert flashes its own colour; two alternate between both colours; all three fall
+      // back to upset + close. Badges still show every alert that applies.
+      let active = ['upset', 'close', 'comeback'].filter(k => flags[k]);
+      if (active.length === 3) active = ['upset', 'close'];
+      const flash = active.length ? ` flash f-${active.join('-')}` : '';
+      const wasFlashing = entry.el.classList.contains('flash');
       entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${flash}${flags.newGame ? ' newgame' : ''}${entry.el.classList.contains('moving') ? ' moving' : ''}`;
+      // Every flashing card runs on one shared 2s clock so the pulses stay in step.
+      if (flash && !wasFlashing) entry.el.style.animationDelay = `-${Math.round(performance.now() % FLASH_MS)}ms`;
+      if (!flash) entry.el.style.animationDelay = '';
       list.appendChild(entry.el); // appendChild moves an existing node, so this also reorders
       seen.add(g.id);
     }
@@ -602,6 +631,7 @@ async function refresh() {
     store.set('ua_spreads', spreadCache);
     prunePeaks();
     store.set('ua_peaks', peakLeads);
+    store.set('ua_cb', comebackState);
     lastFetched = new Date();
     if (!currentWeek && data.week && data.season) {
       currentWeek = { type: data.season.type, week: data.week.number };
