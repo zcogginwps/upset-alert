@@ -25,9 +25,14 @@ alert animations on a non-game day.
 - **Final** games at the bottom.
 
 Alerts:
-- **Upset alert** (blinking red): a team favored by more than 7 is trailing in the 4th
+- **Upset alert** (red pulse): a team favored by more than 7 is trailing in the 4th
   quarter or overtime.
-- **Close game** (flashing blue/green): one-score game with under 6:00 to play (or in OT).
+- **Close game** (blue pulse): one-score game with under 6:00 to play (or in OT).
+- **Comeback watch** (yellow pulse): a lead has shrunk by 16+ points and the game is now
+  within 16. Drops off if the margin climbs back above the closest tier it reached.
+- Two alerts at once fade between both colors; three fall back to upset + close. New games
+  sit at the bottom of Live for their first two minutes; games whose clock reads 0:00 or
+  15:00 hold their spot through ESPN's quarter-break glitches.
 
 Data is ESPN's public scoreboard feed. ESPN drops the betting line once a game ends, so the
 app remembers each game's pregame spread in localStorage.

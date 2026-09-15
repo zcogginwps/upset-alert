@@ -8,8 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="QBB">
   <title>Quad Box Buddy</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🚨%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png?v=1">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=1">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=1">
+  <link rel="manifest" href="manifest.json?v=1">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
   <header class="top">
@@ -57,6 +60,7 @@
     <span><i class="swatch upset"></i> Upset alert: favorite by 7+ trailing in the 4th</span>
     <span><i class="swatch close"></i> Close game: one score, under 6:00 left</span>
     <span><i class="swatch comeback"></i> Comeback watch: a lead has shrunk by 2+ scores and it's now a 2-score game</span>
+    <span>Two alerts at once fade between both colors; three fall back to upset + close</span>
     <span>New games sit at the bottom of Live for their first two minutes</span>
     <span>Live games rank by tier (0–8, 9–16, 17–24…) then time left · Scores &amp; lines from ESPN</span>
   </footer>
@@ -71,6 +75,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>

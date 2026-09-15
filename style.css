@@ -9,10 +9,10 @@
   --live: #ff3b4d;
   --upset: #8a1a2a;      /* alert flashes run between these and their -dim partners */
   --upset-dim: #2d1218;
-  --close: #146b45;
-  --close-dim: #12271e;
-  --comeback: #1b4f9c;
-  --comeback-dim: #142238;
+  --close: #1b4f9c;      /* blue */
+  --close-dim: #142238;
+  --comeback: #9a7a12;   /* amber-yellow, kept dark enough for white text */
+  --comeback-dim: #2c2510;
   --new: #5b6478;
   --chip: #232a3a;
   --chip-on: #ffd166;
@@ -140,8 +140,8 @@ body {
 /* Alerts: every alert pulses on the same 2s clock. One alert fades between its dim and
    full colour; two alerts fade between their two colours (--fa / --fb). */
 .badge.upset { background: #c8102e; }
-.badge.close { background: #12925a; }
-.badge.comeback { background: #2f6fd6; }
+.badge.close { background: #2f6fd6; }
+.badge.comeback { background: #d9a400; color: #1a1400; }
 .badge.new { background: var(--new); }
 
 .card.flash { animation: flash 2s ease-in-out infinite; border-color: rgba(255,255,255,.25); }
@@ -182,8 +182,8 @@ body {
 .legend { margin-top: 26px; color: var(--muted); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
 .swatch.upset { background: #c8102e; }
-.swatch.close { background: #12925a; }
-.swatch.comeback { background: #2f6fd6; }
+.swatch.close { background: #2f6fd6; }
+.swatch.comeback { background: #d9a400; }
 .empty, .error { color: var(--muted); text-align: center; margin-top: 40px; }
 .error { color: #ff8a94; }
 
