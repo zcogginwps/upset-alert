@@ -49,6 +49,8 @@ def main():
     for pid, (label, path, field) in RATINGS.items():
         rows = fetch(path, k)
         rows = [r for r in rows if isinstance(r.get(field), (int, float)) and r.get('team')]
+        if not rows:  # e.g. SRS is not published until a few weeks into the season
+            print(f'{label}: nothing published for {YEAR} yet, skipping'); continue
         if pid == 'sp':  # SP+ includes a "nationalAverages" row and FCS teams; keep FBS only
             rows = [r for r in rows if r.get('conference')]
         rows.sort(key=lambda r: -r[field])
@@ -60,6 +62,7 @@ def main():
             if len(ranks) == TOP_N: break
         if len(ranks) < TOP_N: sys.exit(f'{label}: only {len(ranks)} teams resolved; unresolved so far: {sorted(unresolved)}')
         polls[pid] = {'name': label, 'ranks': ranks}
+    if not polls: sys.exit('no ratings available at all; nothing written')
     json.dump({'updated': datetime.date.today().isoformat(), 'year': YEAR, 'source': 'collegefootballdata.com',
                'polls': polls}, open(OUT, 'w'), indent=1)
     for pid, p in polls.items():
