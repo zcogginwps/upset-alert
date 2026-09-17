@@ -38,8 +38,10 @@ const CONF_KEYS = {
   '151': 'fbs', '12': 'fbs', '15': 'fbs', '17': 'fbs', '9': 'fbs', '37': 'fbs',
 };
 const FBS_KEYS = ['sec', 'b1g', 'b12', 'acc', 'ind', 'fbs'];
-const ALL_FILTERS = ['fav', ...FBS_KEYS, 'fcs', 'd2'];
-const DEFAULT_FILTERS = ['fav', 'sec', 'b1g', 'b12', 'acc']; // Power 4 (+ starred games) until the user opts in
+// 'fav' and 'top25' are not conference keys: they match starred games and games with a
+// ranked team (in the selected poll) respectively. Chips are OR'd together.
+const ALL_FILTERS = ['fav', 'top25', ...FBS_KEYS, 'fcs', 'd2'];
+const DEFAULT_FILTERS = ['fav', 'top25', 'sec', 'b1g', 'b12', 'acc']; // Power 4 + ranked (+ starred) until the user opts in
 
 const UPSET_MIN_SPREAD = 7;     // favorite must be laying MORE than this
 const CLOSE_MAX_DIFF = 8;       // one-score game
@@ -60,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '20';
+const APP_VERSION = '21';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -84,9 +86,56 @@ const ODDS_URL = id =>
 const ODDS_RETRY_MS = 10 * 60 * 1000;
 const oddsAttempts = new Map(); // game id -> timestamp of last backfill attempt
 // Storage key is versioned so changing the chips resets everyone to the defaults.
-const FILTER_KEY = 'ua_filters_v4';
+const FILTER_KEY = 'ua_filters_v5';
 let filters = new Set(store.get(FILTER_KEY, DEFAULT_FILTERS).filter(k => ALL_FILTERS.includes(k)));
 if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
+
+// Rankings. ESPN's scoreboard only carries one "curated" rank (AP until the CFP committee
+// starts, then CFP); the rankings endpoint has every poll, so the user can pick. Polls we
+// offer: AP (1), Coaches (2), CFP (21, appears late October). Cached for 30 minutes.
+const RANKINGS_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings';
+const POLL_IDS = { '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings' };
+const RANKINGS_TTL_MS = 30 * 60 * 1000;
+let rankings = store.get('ua_rankings', { at: 0, polls: {} }); // polls: id -> { name, ranks: { teamId: rank } }
+let selectedPoll = store.get('ua_poll', '1');
+
+async function loadRankings(force) {
+  if (!force && Date.now() - rankings.at < RANKINGS_TTL_MS && Object.keys(rankings.polls).length) return;
+  try {
+    const res = await fetch(RANKINGS_URL, { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const polls = {};
+    for (const r of data.rankings || []) {
+      if (!POLL_IDS[String(r.id)]) continue;
+      const ranks = {};
+      for (const x of r.ranks || []) if (x.team && x.current) ranks[String(x.team.id)] = x.current;
+      if (Object.keys(ranks).length) polls[String(r.id)] = { name: POLL_IDS[String(r.id)], ranks };
+    }
+    if (Object.keys(polls).length) {
+      rankings = { at: Date.now(), polls };
+      store.set('ua_rankings', rankings);
+    }
+  } catch { /* keep whatever we had; cards fall back to ESPN's curated rank */ }
+  if (!rankings.polls[selectedPoll]) selectedPoll = Object.keys(rankings.polls)[0] || '1';
+  renderPollSelect();
+}
+
+// Rank of a team in the selected poll; ESPN's curated rank when the poll data is missing.
+function rankOf(t) {
+  const poll = rankings.polls[selectedPoll];
+  if (!poll) return t.curated;
+  return poll.ranks[t.id] || null;
+}
+function isRankedGame(g) { return !!(rankOf(g.home) || rankOf(g.away)); }
+
+function renderPollSelect() {
+  const sel = byId('poll-select');
+  const ids = Object.keys(rankings.polls);
+  if (!ids.length) { sel.innerHTML = '<option value="1">AP Top 25</option>'; return; }
+  sel.innerHTML = ids.map(id =>
+    `<option value="${id}"${id === selectedPoll ? ' selected' : ''}>${esc(rankings.polls[id].name)}</option>`).join('');
+}
 
 // Biggest lead seen in each game, for the comeback watch. Seeded from ESPN's per-quarter
 // line scores (so someone opening the app mid-game still gets it) and then updated from
@@ -162,7 +211,7 @@ function parseTeam(c, situation) {
     name: t.shortDisplayName || t.name,
     full: t.displayName,
     logo: t.logo,
-    rank: rank && rank <= 25 ? rank : null,
+    curated: rank && rank <= 25 ? rank : null, // ESPN's own rank, used only as a fallback
     record: rec ? rec.summary : '',
     score: Number(c.score) || 0,
     confId: t.conferenceId,
@@ -312,7 +361,7 @@ function isClockUnstable(g) {
 }
 
 function bestRanks(g) {
-  const r = [g.home.rank || 99, g.away.rank || 99].sort((a, b) => a - b);
+  const r = [rankOf(g.home) || 99, rankOf(g.away) || 99].sort((a, b) => a - b);
   return r;
 }
 
@@ -401,7 +450,7 @@ function teamHtml(t, g, opponent) {
   const loser = g.state === 'post' && t.score < opponent.score;
   return `<div class="team${loser ? ' loser' : ''}">
     <img src="${esc(t.logo)}" alt="" loading="lazy">
-    <span class="rank">${t.rank ? '#' + t.rank : ''}</span>
+    <span class="rank">${rankOf(t) ? '#' + rankOf(t) : ''}</span>
     <span class="name" title="${esc(t.full)}">${esc(t.name)}</span>
     <span class="rec">${esc(t.record)}</span>
     ${isLive(g) && t.possession ? '<span class="poss" title="Possession"></span>' : ''}
@@ -464,7 +513,9 @@ function orderLive(live) {
 
 function renderGames(games) {
   const visible = games.filter(g =>
-    [...g.confKeys].some(k => filters.has(k)) || (filters.has('fav') && isFavoriteGame(g)));
+    [...g.confKeys].some(k => filters.has(k))
+    || (filters.has('fav') && isFavoriteGame(g))
+    || (filters.has('top25') && isRankedGame(g)));
 
   const perBucket = { in: [], pre: [], post: [] };
   for (const g of visible) (perBucket[g.state] || perBucket.pre).push(g);
@@ -607,6 +658,7 @@ async function refresh() {
   checkForNewBuild();
   try {
     const requested = selectedWeek;
+    loadRankings(false); // async; the next render picks it up
     const feeds = await Promise.all(GROUPS.map(async grp => {
       const res = await fetch(scoreboardUrl(grp.id), { cache: 'no-store' });
       if (!res.ok) throw new Error(`ESPN responded ${res.status}`);
@@ -952,6 +1004,12 @@ byId('board').addEventListener('click', e => {
   if (star) toggleFavorite(star.closest('.card').dataset.id);
 });
 els.weekSelect.addEventListener('change', onWeekChange);
+byId('poll-select').addEventListener('change', e => {
+  selectedPoll = e.target.value;
+  store.set('ua_poll', selectedPoll);
+  renderGames(games);
+});
+renderPollSelect();
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { suppressNextSlide = true; refresh(); } // coming back counts as a fresh look, no slide show
 });

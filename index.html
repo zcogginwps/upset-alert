@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
   <header class="top">
@@ -21,17 +21,21 @@
       <select id="week-select" aria-label="Week"><option>Loading…</option></select>
       <button id="fav-teams-btn" class="menu-btn" aria-haspopup="dialog">★ <span class="long">Favorite </span>Teams <span class="caret">▾</span></button>
     </div>
-    <div class="filters" id="filters" role="group" aria-label="Conference filters">
-      <button class="chip fav" data-conf="fav">★ Favorites</button>
+    <div class="filters" id="filters" role="group" aria-label="Filters">
+      <button class="chip fav" data-conf="fav" title="Favorites">★ Fav</button>
+      <button class="chip" data-conf="top25" title="Ranked teams">Top 25</button>
       <button class="chip" data-conf="sec">SEC</button>
       <button class="chip" data-conf="b1g">Big Ten</button>
       <button class="chip" data-conf="b12">Big 12</button>
       <button class="chip" data-conf="acc">ACC</button>
-      <button class="chip" data-conf="ind">Independent</button>
-      <button class="chip" data-conf="fbs">Remaining FBS</button>
+      <button class="chip" data-conf="ind" title="Independents">Indep</button>
+      <button class="chip" data-conf="fbs" title="Remaining FBS conferences">Other FBS</button>
       <button class="chip" data-conf="fcs">FCS</button>
       <button class="chip" data-conf="d2">Div 2</button>
       <button class="chip all" id="chip-all">All</button>
+    </div>
+    <div class="toolbar">
+      <label class="poll">Poll <select id="poll-select" aria-label="Ranking poll"><option value="1">AP Top 25</option></select></label>
       <span class="refresh">
         <span id="updated">Loading…</span>
         <button id="refresh-btn" title="Refresh now" aria-label="Refresh now">↻</button>
@@ -75,6 +79,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

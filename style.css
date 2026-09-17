@@ -51,16 +51,31 @@ body {
 }
 .menu-btn .caret { color: var(--muted); margin-left: 2px; }
 .menu-btn.has-teams { border-color: var(--accent); }
-.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px; }
+/* Chips: a fixed 6-column grid so the row count never depends on label widths (two rows
+   for eleven chips), and tall enough to hit with a thumb. */
+.filters {
+  display: grid; grid-template-columns: repeat(6, auto); gap: 6px; /* columns size to their widest label, then share the slack */
+  margin-top: 8px; max-width: 620px;
+}
 .chip {
   border: 1px solid var(--line); background: var(--chip); color: var(--muted);
-  border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600;
+  border-radius: 999px; padding: 9px 6px; font-size: 12px; font-weight: 700; line-height: 1;
   cursor: pointer; transition: background .15s, color .15s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;
+  -webkit-tap-highlight-color: transparent;
 }
 .chip.on { background: var(--chip-on); color: #1a1400; border-color: var(--chip-on); }
 .chip.all { border-style: dashed; }
 .chip.fav.on { background: var(--accent); }
-.refresh { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; }
+.poll { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 600; }
+#poll-select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b93a7' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 7px center;
+  color: var(--text); border: 1px solid var(--line); border-radius: 7px;
+  padding: 4px 20px 4px 8px; font: inherit; font-weight: 700; font-size: 11.5px; cursor: pointer;
+}
+.refresh { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .refresh button {
   border: 1px solid var(--line); background: var(--chip); color: var(--text);
   border-radius: 8px; width: 26px; height: 26px; font-size: 14px; cursor: pointer;

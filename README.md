@@ -1,9 +1,10 @@
 # Quad Box Buddy (QBB)
 
 Personal college-football scoreboard covering FBS, FCS and Division II, ordered so the games
-worth watching float to the top. Filter chips: Favorites, SEC, Big Ten, Big 12, ACC,
-Independents (Notre Dame, UConn), remaining FBS, FCS, Div 2. Favorites + Power 4 are on by
-default.
+worth watching float to the top. Filter chips: Favorites, Top 25, SEC, Big Ten, Big 12,
+ACC, Independents (Notre Dame, UConn), other FBS, FCS, Div 2. Favorites + Top 25 + Power 4 are
+on by default. The Top 25 chip and the rank numbers on cards follow the poll picked under the
+chips (AP, Coaches, or CFP once the committee rankings begin).
 
 ## Run it
 
