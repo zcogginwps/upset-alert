@@ -60,7 +60,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '19';
+const APP_VERSION = '20';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -326,21 +326,19 @@ function compareGames(a, b) {
     return isFavoriteGame(b) - isFavoriteGame(a)
       || tier(a) - tier(b) || secondsLeft(a) - secondsLeft(b) || diff(a) - diff(b);
   }
+  // Starred games lead every non-live bucket too, so before kickoff (and after the final)
+  // your games sit at the top of their section; live games still outrank them all.
+  const fav = isFavoriteGame(b) - isFavoriteGame(a);
   if (ba === 1) {
     // Upcoming: kickoff, then smallest spread, then better-ranked matchup.
     const sa = a.spread ? a.spread.points : Infinity;
     const sb = b.spread ? b.spread.points : Infinity;
     const [a1, a2] = bestRanks(a), [b1, b2] = bestRanks(b);
-    return a.date - b.date || sa - sb || a1 - b1 || a2 - b2;
+    return fav || a.date - b.date || sa - sb || a1 - b1 || a2 - b2;
   }
-  // Finals: most recent kickoff first. Once the whole week is done, starred games lead.
-  return (weekComplete ? isFavoriteGame(b) - isFavoriteGame(a) : 0) || b.date - a.date;
+  // Finals: most recent kickoff first.
+  return fav || b.date - a.date;
 }
-
-// True when every game on the board is over (postponed/cancelled ones count as over),
-// so a finished week reads like a live one: favorites on top.
-let weekComplete = false;
-function isDone(g) { return g.state === 'post' || /POSTPONE|CANCEL/.test(g.statusName); }
 
 // ---------- rendering ----------
 const els = {
@@ -467,7 +465,6 @@ function orderLive(live) {
 function renderGames(games) {
   const visible = games.filter(g =>
     [...g.confKeys].some(k => filters.has(k)) || (filters.has('fav') && isFavoriteGame(g)));
-  weekComplete = visible.length > 0 && visible.every(isDone);
 
   const perBucket = { in: [], pre: [], post: [] };
   for (const g of visible) (perBucket[g.state] || perBucket.pre).push(g);

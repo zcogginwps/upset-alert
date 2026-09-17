@@ -20,9 +20,9 @@ alert animations on a non-game day.
 
 - **Live** games first, ranked by margin tier (1–8 pts, 9–16, 17–24, …), then by least
   time left, then by raw margin.
-- **Upcoming** games next: kickoff time, then smallest spread, then the better-ranked
-  matchup.
-- **Final** games at the bottom.
+- **Upcoming** games next: starred games first, then kickoff time, smallest spread, and the
+  better-ranked matchup.
+- **Final** games at the bottom, starred games first.
 
 Alerts:
 - **Upset alert** (red pulse): a team favored by more than 7 is trailing in the 4th
