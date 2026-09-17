@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '26';
+const APP_VERSION = '27';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -178,17 +178,22 @@ function rankOf(t) {
 function isRankedGame(g) { return !!(fbsRankOf(g.home) || fbsRankOf(g.away)); }
 
 // The poll menu pops up when the Top 25 chip is held (or right-clicked).
+// Polls (people vote) and ratings (a model scores every team; we show its top 25) are
+// listed under separate headings so nobody mistakes an SP+ #12 for a poll position.
+const RATING_IDS = new Set(['sp', 'fpi', 'srs', 'elo']);
 function renderPollSelect() {
   const menu = byId('poll-menu');
   const ids = Object.keys(POLL_IDS).filter(id => rankings.polls[id]);
   const items = ids.length ? ids : ['1'];
-  menu.innerHTML = `<div class="title">Ranking poll</div>` + items.map(id =>
-    `<button role="menuitemradio" aria-checked="${id === selectedPoll}" data-poll="${id}">
+  const item = id => `<button role="menuitemradio" aria-checked="${id === selectedPoll}" data-poll="${id}">
       <span>${esc((rankings.polls[id] || { name: POLL_IDS[id] }).name)}</span>
       <span class="check">${id === selectedPoll ? '✓' : ''}</span>
-    </button>`).join('');
+    </button>`;
+  const polls = items.filter(id => !RATING_IDS.has(id)), ratings = items.filter(id => RATING_IDS.has(id));
+  menu.innerHTML = `<div class="title">Rankings <small>voted polls</small></div>` + polls.map(item).join('')
+    + (ratings.length ? `<div class="title">Ratings <small>computer models, top 25</small></div>` + ratings.map(item).join('') : '');
   const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds', 'pate': 'JP Poll', 'sp': 'SP+', 'fpi': 'FPI', 'srs': 'SRS', 'elo': 'Elo' }[selectedPoll] || '';
-  byId('poll-hint').textContent = `Hold Top 25 to pick the poll · ${short}`;
+  byId('poll-hint').textContent = `Hold Top 25 to pick rankings · ${short}${RATING_IDS.has(selectedPoll) ? ' rating' : ''}`;
 }
 
 function openPollMenu() {
