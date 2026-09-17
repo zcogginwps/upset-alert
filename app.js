@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '29';
+const APP_VERSION = '30';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -1060,6 +1060,39 @@ if (DEMO_SHUFFLE) {
     }
     renderGames(games);
   }, 6000);
+}
+
+// ---------- pull to refresh ----------
+// The home-screen app has no browser chrome, so a downward drag from the very top of the
+// page reveals an arrow; past the threshold it flips, and letting go refreshes.
+{
+  const el = byId('ptr'), icon = el.querySelector('.ptr-icon');
+  const THRESHOLD = 70, MAX = 110;
+  let startY = null, pulling = false, dist = 0;
+  const reset = () => { el.classList.add('settle'); el.classList.remove('show', 'armed', 'loading'); el.style.transform = ''; icon.textContent = '↓'; dist = 0; setTimeout(() => el.classList.remove('settle'), 300); };
+  document.addEventListener('touchstart', e => {
+    pulling = window.scrollY <= 0 && e.touches.length === 1 && els.panel.hidden && !el.classList.contains('loading');
+    startY = pulling ? e.touches[0].clientY : null; dist = 0;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0 || window.scrollY > 0) { dist = 0; el.classList.remove('show', 'armed'); el.style.transform = ''; return; }
+    dist = Math.min(dy * 0.55, MAX); // some resistance
+    el.classList.add('show');
+    el.classList.toggle('armed', dist >= THRESHOLD);
+    el.style.transform = `translate(-50%, ${dist}px)`;
+  }, { passive: true });
+  const release = () => {
+    if (!pulling) return;
+    pulling = false;
+    if (dist < THRESHOLD) { reset(); return; }
+    el.classList.remove('armed'); el.classList.add('loading'); icon.textContent = '↻';
+    el.style.transform = `translate(-50%, ${THRESHOLD}px)`;
+    Promise.resolve(refresh()).finally(() => setTimeout(reset, 350));
+  };
+  document.addEventListener('touchend', release);
+  document.addEventListener('touchcancel', release);
 }
 
 // ---------- wiring ----------

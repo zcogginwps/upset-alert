@@ -27,6 +27,21 @@ body {
   margin: 0 auto;
 }
 
+/* Pull-to-refresh indicator (touch only): slides down from under the notch while pulling */
+.ptr {
+  position: fixed; top: env(safe-area-inset-top, 0); left: 50%; z-index: 40;
+  width: 36px; height: 36px; margin-top: -44px; border-radius: 50%;
+  background: var(--panel-2); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; color: var(--muted);
+  transform: translate(-50%, 0); opacity: 0; transition: opacity .15s; pointer-events: none;
+}
+.ptr.show { opacity: 1; }
+.ptr .ptr-icon { font-size: 18px; font-weight: 800; line-height: 1; transition: transform .2s; }
+.ptr.armed { color: var(--accent); border-color: var(--accent); }
+.ptr.armed .ptr-icon { transform: rotate(180deg); }
+.ptr.loading .ptr-icon { transform: none; animation: spin .8s linear infinite; }
+.ptr.settle { transition: opacity .15s, transform .25s ease-out; }
+
 /* Header */
 .top {
   position: sticky; top: 0; z-index: 5;
