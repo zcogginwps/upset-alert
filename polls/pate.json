@@ -1,0 +1,133 @@
+{
+  "poll": "JP Poll (Josh Pate)",
+  "week": 3,
+  "updated": "2026-09-15",
+  "source": "https://www.on3.com/news/josh-pate-releases-updated-college-football-ratings-in-pre-week-3-jp-poll",
+  "ranks": [
+    {
+      "rank": 1,
+      "team": "Ohio State",
+      "id": "194"
+    },
+    {
+      "rank": 2,
+      "team": "Georgia",
+      "id": "61"
+    },
+    {
+      "rank": 3,
+      "team": "Texas",
+      "id": "251"
+    },
+    {
+      "rank": 4,
+      "team": "LSU",
+      "id": "99"
+    },
+    {
+      "rank": 5,
+      "team": "Miami",
+      "id": "2390"
+    },
+    {
+      "rank": 6,
+      "team": "Indiana",
+      "id": "84"
+    },
+    {
+      "rank": 7,
+      "team": "Ole Miss",
+      "id": "145"
+    },
+    {
+      "rank": 8,
+      "team": "Notre Dame",
+      "id": "87"
+    },
+    {
+      "rank": 9,
+      "team": "USC",
+      "id": "30"
+    },
+    {
+      "rank": 10,
+      "team": "Alabama",
+      "id": "333"
+    },
+    {
+      "rank": 11,
+      "team": "Texas A&M",
+      "id": "245"
+    },
+    {
+      "rank": 12,
+      "team": "Oregon",
+      "id": "2483"
+    },
+    {
+      "rank": 13,
+      "team": "Oklahoma",
+      "id": "201"
+    },
+    {
+      "rank": 14,
+      "team": "Texas Tech",
+      "id": "2641"
+    },
+    {
+      "rank": 15,
+      "team": "Missouri",
+      "id": "142"
+    },
+    {
+      "rank": 16,
+      "team": "Louisville",
+      "id": "97"
+    },
+    {
+      "rank": 17,
+      "team": "Tennessee",
+      "id": "2633"
+    },
+    {
+      "rank": 18,
+      "team": "Penn State",
+      "id": "213"
+    },
+    {
+      "rank": 19,
+      "team": "BYU",
+      "id": "252"
+    },
+    {
+      "rank": 20,
+      "team": "SMU",
+      "id": "2567"
+    },
+    {
+      "rank": 21,
+      "team": "Utah",
+      "id": "254"
+    },
+    {
+      "rank": 22,
+      "team": "Mississippi St",
+      "id": "344"
+    },
+    {
+      "rank": 23,
+      "team": "Florida",
+      "id": "57"
+    },
+    {
+      "rank": 24,
+      "team": "Auburn",
+      "id": "2"
+    },
+    {
+      "rank": 25,
+      "team": "South Carolina",
+      "id": "2579"
+    }
+  ]
+}

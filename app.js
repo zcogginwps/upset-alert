@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '23';
+const APP_VERSION = '24';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -95,7 +95,10 @@ if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
 // offer: AP (1), Coaches (2), CFP (21, appears late October). Cached for 30 minutes.
 const RANKINGS_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings';
 // Polls the user can pick for FBS teams and the Top 25 chip...
-const POLL_IDS = { '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings' };
+const POLL_IDS = { '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings', 'pate': 'JP Poll (Josh Pate)' };
+// Josh Pate's JP Poll has no feed; a weekly job on Zane's Mac reads the On3 write-up and
+// commits polls/pate.json (see scripts/update_pate.py).
+const PATE_URL = 'polls/pate.json';
 // ...and the level-specific coaches polls applied automatically to FCS / D-II / D-III teams
 // (display only; they never feed the Top 25 chip, which is FBS-only).
 const LEVEL_POLLS = { '20': 'FCS Coaches', '11': 'D-II Coaches', '12': 'D-III Coaches' };
@@ -116,6 +119,15 @@ async function loadRankings(force) {
       for (const x of r.ranks || []) if (x.team && x.current) ranks[String(x.team.id)] = x.current;
       if (Object.keys(ranks).length) polls[String(r.id)] = { name: POLL_IDS[String(r.id)] || LEVEL_POLLS[String(r.id)], ranks };
     }
+    try {
+      const pr = await fetch(`${PATE_URL}?t=${Date.now()}`, { cache: 'no-store' });
+      if (pr.ok) {
+        const pate = await pr.json();
+        const ranks = {};
+        for (const x of pate.ranks || []) ranks[String(x.id)] = x.rank;
+        if (Object.keys(ranks).length) polls.pate = { name: `${POLL_IDS.pate} · Wk ${pate.week}`, ranks };
+      }
+    } catch { /* optional */ }
     if (Object.keys(polls).length) {
       rankings = { at: Date.now(), polls };
       store.set('ua_rankings', rankings);
@@ -156,7 +168,7 @@ function renderPollSelect() {
       <span>${esc((rankings.polls[id] || { name: POLL_IDS[id] }).name)}</span>
       <span class="check">${id === selectedPoll ? '✓' : ''}</span>
     </button>`).join('');
-  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds' }[selectedPoll] || '';
+  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds', 'pate': 'JP Poll' }[selectedPoll] || '';
   byId('poll-hint').textContent = `Hold Top 25 to pick the poll · ${short}`;
 }
 
