@@ -27,20 +27,21 @@ body {
   margin: 0 auto;
 }
 
-/* Pull-to-refresh indicator (touch only): slides down from under the notch while pulling */
+/* Pull-to-refresh strip (touch only): sits between the sticky header and the board and
+   opens up as you pull, so the title and chips stay put while the games slide down */
 .ptr {
-  position: fixed; top: env(safe-area-inset-top, 0); left: 50%; z-index: 40;
-  width: 36px; height: 36px; margin-top: -44px; border-radius: 50%;
-  background: var(--panel-2); border: 1px solid var(--line); box-shadow: 0 4px 14px rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center; color: var(--muted);
-  transform: translate(-50%, 0); opacity: 0; transition: opacity .15s; pointer-events: none;
+  height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
 }
-.ptr.show { opacity: 1; }
-.ptr .ptr-icon { font-size: 18px; font-weight: 800; line-height: 1; transition: transform .2s; }
-.ptr.armed { color: var(--accent); border-color: var(--accent); }
-.ptr.armed .ptr-icon { transform: rotate(180deg); }
-.ptr.loading .ptr-icon { transform: none; animation: spin .8s linear infinite; }
-.ptr.settle { transition: opacity .15s, transform .25s ease-out; }
+.ptr .ptr-icon {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--panel-2); border: 1px solid var(--line); font-size: 17px; font-weight: 800; line-height: 1;
+  transition: transform .2s; opacity: 0;
+}
+.ptr.show .ptr-icon { opacity: 1; }
+.ptr.armed .ptr-icon { color: var(--accent); border-color: var(--accent); transform: rotate(180deg); }
+.ptr.loading .ptr-icon { color: var(--accent); transform: none; animation: spin .8s linear infinite; }
+.ptr.settle { transition: height .25s ease-out; }
 
 /* Header */
 .top {
