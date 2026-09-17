@@ -128,6 +128,8 @@ body {
 .team { display: flex; align-items: center; gap: 8px; min-height: 28px; min-width: 0; }
 .team img { width: 26px; height: 26px; object-fit: contain; flex: none; }
 .team .rank { color: var(--accent); font-size: 12px; font-weight: 700; width: 24px; flex: none; text-align: right; }
+.team .rank.lvl { width: auto; min-width: 24px; display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
+.team .rank small { font-size: 8px; font-weight: 800; letter-spacing: .5px; color: var(--muted); margin-top: 2px; }
 .team .rank:empty { visibility: hidden; }
 .team .name { font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .team .rec { color: var(--muted); font-size: 12px; flex: none; }

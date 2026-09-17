@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '28';
+const APP_VERSION = '29';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -119,7 +119,10 @@ async function loadRankings(force) {
     const res = await fetch(RANKINGS_URL, { cache: 'no-store' });
     if (!res.ok) return;
     const data = await res.json();
+    // Start from the optional polls we already had, so a hiccup fetching pate.json or
+    // ratings.json does not make the user's selected poll vanish for the session.
     const polls = {};
+    for (const id of ['pate', 'sp', 'fpi', 'srs', 'elo']) if (rankings.polls[id]) polls[id] = rankings.polls[id];
     for (const r of data.rankings || []) {
       if (!POLL_IDS[String(r.id)] && !LEVEL_POLLS[String(r.id)]) continue;
       const ranks = {};
@@ -152,29 +155,34 @@ async function loadRankings(force) {
       store.set('ua_rankings', rankings);
     }
   } catch { /* keep whatever we had; cards fall back to ESPN's curated rank */ }
-  if (!rankings.polls[selectedPoll]) selectedPoll = Object.keys(rankings.polls).find(id => POLL_IDS[id]) || '1';
+  // The saved choice is never overridden. If its data is not loaded yet, cards fall back
+  // to AP for now and the next poll re-fetches sooner (cache marked stale).
+  if (!rankings.polls[selectedPoll]) rankings.at = 0;
   renderPollSelect();
   renderGames(games);
 }
 
 // Rank in the selected FBS poll; ESPN's curated rank when the poll data is missing.
 function fbsRankOf(t) {
-  const poll = rankings.polls[selectedPoll];
+  const poll = rankings.polls[selectedPoll] || rankings.polls['1'];
   if (!poll) return t.curated;
   return poll.ranks[t.id] || null;
 }
 // Rank shown on the card: the selected poll for FBS teams, otherwise the team's own
-// level poll (FCS / D-II / D-III coaches), which needs no picking.
-function rankOf(t) {
+// level poll (FCS / D-II / D-III coaches), which needs no picking. Returns the level
+// tag too so non-FBS ranks can be labelled.
+const LEVEL_TAGS = { '20': 'FCS', '11': 'D2', '12': 'D3' };
+function rankInfo(t) {
   const fbs = fbsRankOf(t);
-  if (fbs) return fbs;
+  if (fbs) return { rank: fbs, level: '' };
   if (CONF_KEYS[t.confId]) return null; // FBS team, just unranked
   for (const id of Object.keys(LEVEL_POLLS)) {
     const poll = rankings.polls[id];
-    if (poll && poll.ranks[t.id]) return poll.ranks[t.id];
+    if (poll && poll.ranks[t.id]) return { rank: poll.ranks[t.id], level: LEVEL_TAGS[id] };
   }
   return null;
 }
+function rankOf(t) { const r = rankInfo(t); return r ? r.rank : null; }
 function isRankedGame(g) { return !!(fbsRankOf(g.home) || fbsRankOf(g.away)); }
 
 // The poll menu pops up when the Top 25 chip is held (or right-clicked).
@@ -523,7 +531,7 @@ function teamHtml(t, g, opponent) {
   const loser = g.state === 'post' && t.score < opponent.score;
   return `<div class="team${loser ? ' loser' : ''}">
     <img src="${esc(t.logo)}" alt="" loading="lazy">
-    <span class="rank">${rankOf(t) ? '#' + rankOf(t) : ''}</span>
+    ${(() => { const r = rankInfo(t); return `<span class="rank${r && r.level ? ' lvl' : ''}">${r ? '#' + r.rank : ''}${r && r.level ? `<small>${r.level}</small>` : ''}</span>`; })()}
     <span class="name" title="${esc(t.full)}">${esc(t.name)}</span>
     <span class="rec">${esc(t.record)}</span>
     ${isLive(g) && t.possession ? '<span class="poss" title="Possession"></span>' : ''}
