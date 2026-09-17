@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '22';
+const APP_VERSION = '23';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -94,7 +94,11 @@ if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
 // starts, then CFP); the rankings endpoint has every poll, so the user can pick. Polls we
 // offer: AP (1), Coaches (2), CFP (21, appears late October). Cached for 30 minutes.
 const RANKINGS_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings';
-const POLL_IDS = { '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings' };
+// Polls the user can pick for FBS teams and the Top 25 chip...
+const POLL_IDS = { '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings' };
+// ...and the level-specific coaches polls applied automatically to FCS / D-II / D-III teams
+// (display only; they never feed the Top 25 chip, which is FBS-only).
+const LEVEL_POLLS = { '20': 'FCS Coaches', '11': 'D-II Coaches', '12': 'D-III Coaches' };
 const RANKINGS_TTL_MS = 30 * 60 * 1000;
 let rankings = store.get('ua_rankings', { at: 0, polls: {} }); // polls: id -> { name, ranks: { teamId: rank } }
 let selectedPoll = store.get('ua_poll', '1');
@@ -107,39 +111,52 @@ async function loadRankings(force) {
     const data = await res.json();
     const polls = {};
     for (const r of data.rankings || []) {
-      if (!POLL_IDS[String(r.id)]) continue;
+      if (!POLL_IDS[String(r.id)] && !LEVEL_POLLS[String(r.id)]) continue;
       const ranks = {};
       for (const x of r.ranks || []) if (x.team && x.current) ranks[String(x.team.id)] = x.current;
-      if (Object.keys(ranks).length) polls[String(r.id)] = { name: POLL_IDS[String(r.id)], ranks };
+      if (Object.keys(ranks).length) polls[String(r.id)] = { name: POLL_IDS[String(r.id)] || LEVEL_POLLS[String(r.id)], ranks };
     }
     if (Object.keys(polls).length) {
       rankings = { at: Date.now(), polls };
       store.set('ua_rankings', rankings);
     }
   } catch { /* keep whatever we had; cards fall back to ESPN's curated rank */ }
-  if (!rankings.polls[selectedPoll]) selectedPoll = Object.keys(rankings.polls)[0] || '1';
+  if (!rankings.polls[selectedPoll]) selectedPoll = Object.keys(rankings.polls).find(id => POLL_IDS[id]) || '1';
   renderPollSelect();
+  renderGames(games);
 }
 
-// Rank of a team in the selected poll; ESPN's curated rank when the poll data is missing.
-function rankOf(t) {
+// Rank in the selected FBS poll; ESPN's curated rank when the poll data is missing.
+function fbsRankOf(t) {
   const poll = rankings.polls[selectedPoll];
   if (!poll) return t.curated;
   return poll.ranks[t.id] || null;
 }
-function isRankedGame(g) { return !!(rankOf(g.home) || rankOf(g.away)); }
+// Rank shown on the card: the selected poll for FBS teams, otherwise the team's own
+// level poll (FCS / D-II / D-III coaches), which needs no picking.
+function rankOf(t) {
+  const fbs = fbsRankOf(t);
+  if (fbs) return fbs;
+  if (CONF_KEYS[t.confId]) return null; // FBS team, just unranked
+  for (const id of Object.keys(LEVEL_POLLS)) {
+    const poll = rankings.polls[id];
+    if (poll && poll.ranks[t.id]) return poll.ranks[t.id];
+  }
+  return null;
+}
+function isRankedGame(g) { return !!(fbsRankOf(g.home) || fbsRankOf(g.away)); }
 
 // The poll menu pops up when the Top 25 chip is held (or right-clicked).
 function renderPollSelect() {
   const menu = byId('poll-menu');
-  const ids = Object.keys(rankings.polls);
+  const ids = Object.keys(POLL_IDS).filter(id => rankings.polls[id]);
   const items = ids.length ? ids : ['1'];
   menu.innerHTML = `<div class="title">Ranking poll</div>` + items.map(id =>
     `<button role="menuitemradio" aria-checked="${id === selectedPoll}" data-poll="${id}">
       <span>${esc((rankings.polls[id] || { name: POLL_IDS[id] }).name)}</span>
       <span class="check">${id === selectedPoll ? '✓' : ''}</span>
     </button>`).join('');
-  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP' }[selectedPoll] || '';
+  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds' }[selectedPoll] || '';
   byId('poll-hint').textContent = `Hold Top 25 to pick the poll · ${short}`;
 }
 
