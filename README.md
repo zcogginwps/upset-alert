@@ -2,9 +2,9 @@
 
 Personal college-football scoreboard covering FBS, FCS and Division II, ordered so the games
 worth watching float to the top. Filter chips: Favorites, Top 25, SEC, Big Ten, Big 12,
-ACC, Independents (Notre Dame, UConn), other FBS, FCS, Div 2. Favorites + Top 25 + Power 4 are
-on by default. The Top 25 chip and the rank numbers on cards follow the poll picked under the
-chips (AP, Coaches, or CFP once the committee rankings begin).
+ACC, Independents (Notre Dame, UConn), G5, FCS, Div 2. Favorites + Top 25 + Power 4 are
+on by default. Hold the Top 25 chip to pick the poll (AP, Coaches, or CFP once the committee
+rankings begin); it drives both the filter and the rank numbers on cards.
 
 ## Run it
 

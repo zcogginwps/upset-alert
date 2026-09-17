@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '21';
+const APP_VERSION = '22';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -129,13 +129,32 @@ function rankOf(t) {
 }
 function isRankedGame(g) { return !!(rankOf(g.home) || rankOf(g.away)); }
 
+// The poll menu pops up when the Top 25 chip is held (or right-clicked).
 function renderPollSelect() {
-  const sel = byId('poll-select');
+  const menu = byId('poll-menu');
   const ids = Object.keys(rankings.polls);
-  if (!ids.length) { sel.innerHTML = '<option value="1">AP Top 25</option>'; return; }
-  sel.innerHTML = ids.map(id =>
-    `<option value="${id}"${id === selectedPoll ? ' selected' : ''}>${esc(rankings.polls[id].name)}</option>`).join('');
+  const items = ids.length ? ids : ['1'];
+  menu.innerHTML = `<div class="title">Ranking poll</div>` + items.map(id =>
+    `<button role="menuitemradio" aria-checked="${id === selectedPoll}" data-poll="${id}">
+      <span>${esc((rankings.polls[id] || { name: POLL_IDS[id] }).name)}</span>
+      <span class="check">${id === selectedPoll ? '✓' : ''}</span>
+    </button>`).join('');
+  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP' }[selectedPoll] || '';
+  byId('poll-hint').textContent = `Hold Top 25 to pick the poll · ${short}`;
 }
+
+function openPollMenu() {
+  const menu = byId('poll-menu');
+  const chip = byId('chip-top25');
+  const top = document.querySelector('.top').getBoundingClientRect();
+  const r = chip.getBoundingClientRect();
+  menu.hidden = false;
+  menu.style.top = `${r.bottom - top.top + 6}px`;
+  menu.style.left = `${Math.max(0, r.left - top.left)}px`;
+  const overflow = menu.getBoundingClientRect().right - (top.right - 4);
+  if (overflow > 0) menu.style.left = `${Math.max(0, r.left - top.left - overflow)}px`;
+}
+function closePollMenu() { byId('poll-menu').hidden = true; }
 
 // Biggest lead seen in each game, for the comeback watch. Seeded from ESPN's per-quarter
 // line scores (so someone opening the app mid-game still gets it) and then updated from
@@ -1004,11 +1023,32 @@ byId('board').addEventListener('click', e => {
   if (star) toggleFavorite(star.closest('.card').dataset.id);
 });
 els.weekSelect.addEventListener('change', onWeekChange);
-byId('poll-select').addEventListener('change', e => {
-  selectedPoll = e.target.value;
-  store.set('ua_poll', selectedPoll);
-  renderGames(games);
-});
+// Top 25 chip: tap toggles the filter, hold (~450ms) or right-click opens the poll menu.
+{
+  const chip = byId('chip-top25');
+  let holdTimer = null, held = false;
+  const start = () => { held = false; clearTimeout(holdTimer); holdTimer = setTimeout(() => { held = true; openPollMenu(); }, 450); };
+  const cancel = () => clearTimeout(holdTimer);
+  chip.addEventListener('pointerdown', start);
+  chip.addEventListener('pointerup', cancel);
+  chip.addEventListener('pointerleave', cancel);
+  chip.addEventListener('pointercancel', cancel);
+  chip.addEventListener('click', e => { if (held) { e.stopImmediatePropagation(); e.preventDefault(); held = false; } }, true);
+  chip.addEventListener('contextmenu', e => { e.preventDefault(); openPollMenu(); });
+  byId('poll-menu').addEventListener('click', e => {
+    const b = e.target.closest('button[data-poll]');
+    if (!b) return;
+    selectedPoll = b.dataset.poll;
+    store.set('ua_poll', selectedPoll);
+    renderPollSelect();
+    closePollMenu();
+    renderGames(games);
+  });
+  document.addEventListener('pointerdown', e => {
+    if (!byId('poll-menu').hidden && !e.target.closest('#poll-menu') && !e.target.closest('#chip-top25')) closePollMenu();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePollMenu(); });
+}
 renderPollSelect();
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { suppressNextSlide = true; refresh(); } // coming back counts as a fresh look, no slide show

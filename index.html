@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
   <header class="top">
@@ -23,24 +23,25 @@
     </div>
     <div class="filters" id="filters" role="group" aria-label="Filters">
       <button class="chip fav" data-conf="fav" title="Favorites">★ Fav</button>
-      <button class="chip" data-conf="top25" title="Ranked teams">Top 25</button>
+      <button class="chip" data-conf="top25" id="chip-top25" title="Ranked teams. Hold to choose the poll.">Top 25</button>
       <button class="chip" data-conf="sec">SEC</button>
       <button class="chip" data-conf="b1g">Big Ten</button>
       <button class="chip" data-conf="b12">Big 12</button>
       <button class="chip" data-conf="acc">ACC</button>
       <button class="chip" data-conf="ind" title="Independents">Indep</button>
-      <button class="chip" data-conf="fbs" title="Remaining FBS conferences">Other FBS</button>
+      <button class="chip" data-conf="fbs" title="Group of 5: American, CUSA, MAC, Mountain West, Pac-12, Sun Belt">G5</button>
       <button class="chip" data-conf="fcs">FCS</button>
       <button class="chip" data-conf="d2">Div 2</button>
       <button class="chip all" id="chip-all">All</button>
     </div>
     <div class="toolbar">
-      <label class="poll">Poll <select id="poll-select" aria-label="Ranking poll"><option value="1">AP Top 25</option></select></label>
+      <span class="hint" id="poll-hint">Hold Top 25 to pick the poll</span>
       <span class="refresh">
         <span id="updated">Loading…</span>
         <button id="refresh-btn" title="Refresh now" aria-label="Refresh now">↻</button>
       </span>
     </div>
+    <div id="poll-menu" class="popover" role="menu" hidden></div>
   </header>
 
   <main id="board">
@@ -65,6 +66,7 @@
     <span><i class="swatch close"></i> Close game: one score, under 6:00 left</span>
     <span><i class="swatch comeback"></i> Comeback watch: a lead has shrunk by 2+ scores and it's now a 2-score game</span>
     <span>Two alerts at once fade between both colors; three fall back to upset + close</span>
+    <span>Hold the Top 25 chip to switch between the AP, Coaches and CFP polls</span>
     <span>New games sit at the bottom of Live for their first two minutes</span>
     <span>Live games rank by tier (0–8, 9–16, 17–24…) then time left · Scores &amp; lines from ESPN</span>
   </footer>
@@ -79,6 +81,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=22"></script>
 </body>
 </html>
