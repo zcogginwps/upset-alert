@@ -62,7 +62,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '24';
+const APP_VERSION = '25';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -95,7 +95,14 @@ if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
 // offer: AP (1), Coaches (2), CFP (21, appears late October). Cached for 30 minutes.
 const RANKINGS_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings';
 // Polls the user can pick for FBS teams and the Top 25 chip...
-const POLL_IDS = { '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings', 'pate': 'JP Poll (Josh Pate)' };
+const POLL_IDS = {
+  '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings',
+  'pate': 'JP Poll (Josh Pate)',
+  // Computer ratings from CollegeFootballData, published weekly as polls/ratings.json by
+  // scripts/update_ratings.py (the API key stays on Zane's Mac).
+  'sp': 'SP+ (Connelly)', 'fpi': 'ESPN FPI', 'srs': 'SRS', 'elo': 'Elo',
+};
+const RATINGS_URL = 'polls/ratings.json';
 // Josh Pate's JP Poll has no feed; a weekly job on Zane's Mac reads the On3 write-up and
 // commits polls/pate.json (see scripts/update_pate.py).
 const PATE_URL = 'polls/pate.json';
@@ -126,6 +133,18 @@ async function loadRankings(force) {
         const ranks = {};
         for (const x of pate.ranks || []) ranks[String(x.id)] = x.rank;
         if (Object.keys(ranks).length) polls.pate = { name: `${POLL_IDS.pate} · Wk ${pate.week}`, ranks };
+      }
+    } catch { /* optional */ }
+    try {
+      const rr = await fetch(`${RATINGS_URL}?t=${Date.now()}`, { cache: 'no-store' });
+      if (rr.ok) {
+        const data = await rr.json();
+        for (const [id, p] of Object.entries(data.polls || {})) {
+          if (!POLL_IDS[id]) continue;
+          const ranks = {};
+          for (const x of p.ranks || []) ranks[String(x.id)] = x.rank;
+          if (Object.keys(ranks).length) polls[id] = { name: POLL_IDS[id], ranks };
+        }
       }
     } catch { /* optional */ }
     if (Object.keys(polls).length) {
@@ -168,7 +187,7 @@ function renderPollSelect() {
       <span>${esc((rankings.polls[id] || { name: POLL_IDS[id] }).name)}</span>
       <span class="check">${id === selectedPoll ? '✓' : ''}</span>
     </button>`).join('');
-  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds', 'pate': 'JP Poll' }[selectedPoll] || '';
+  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds', 'pate': 'JP Poll', 'sp': 'SP+', 'fpi': 'FPI', 'srs': 'SRS', 'elo': 'Elo' }[selectedPoll] || '';
   byId('poll-hint').textContent = `Hold Top 25 to pick the poll · ${short}`;
 }
 
