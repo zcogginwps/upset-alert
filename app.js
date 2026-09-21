@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '33';
+const APP_VERSION = '34';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -463,6 +463,11 @@ function isComebackWin(g) {
   const w = winner(g), peak = peakLeads[g.id];
   return !!w && !!peak && !!peak.teamId && peak.teamId !== w.id && peak.lead >= TIER_SIZE * 2 + 1;
 }
+// Close call: a favorite of three scores or more (17+) survived by a single score.
+function isCloseCall(g) {
+  const w = winner(g), fav = favorite(g);
+  return !!w && !!fav && w === fav && Math.ceil(g.spread.points / TIER_SIZE) >= 3 && diff(g) <= CLOSE_MAX_DIFF;
+}
 // Blowout win: won by at least three score-tiers more than the line projected. A favorite
 // laying 3 (tier 1) that wins by 27 (tier 4) qualifies; so does an underdog winning by 17+.
 function isBlowoutWin(g) {
@@ -614,6 +619,7 @@ function cardHtml(g, flags, fav) {
   if (flags.blowout) badges.push('<span class="badge watch w-blowout">Blowout watch</span>');
   if (flags.upsetWin) badges.push('<span class="badge watch w-upsetWin">Upset</span>');
   if (flags.comebackWin) badges.push('<span class="badge watch w-comebackWin">Comeback win</span>');
+  if (flags.closeCall) badges.push('<span class="badge watch w-closeCall">Close call</span>');
   if (flags.blowoutWin) badges.push('<span class="badge watch w-blowoutWin">Blowout win</span>');
   if (flags.newGame) badges.push('<span class="badge new">New game</span>');
   return `
@@ -640,7 +646,7 @@ let suppressNextSlide = false; // set when the tab comes back from the backgroun
 // Ring priority when several apply (approved by Zane): upset > good game > comeback > blowout,
 // and for finals: upset > comeback win > blowout win.
 const WATCH_ORDER = ['upsetWatch', 'goodGame', 'comeback', 'blowout'];
-const FINAL_ORDER = ['upsetWin', 'comebackWin', 'blowoutWin'];
+const FINAL_ORDER = ['upsetWin', 'comebackWin', 'closeCall', 'blowoutWin'];
 
 function orderLive(live) {
   const delayed = live.filter(isDelayed).sort((a, b) => a.date - b.date);
@@ -687,7 +693,7 @@ function renderGames(games) {
         upsetWatch: !delayed && isUpsetWatch(g), goodGame: !delayed && isGoodGameWatch(g),
         comeback: !delayed && isComebackWatch(g), blowout: !delayed && isBlowoutWatch(g),
         // final-game rings
-        upsetWin: isUpsetWin(g), comebackWin: isComebackWin(g), blowoutWin: isBlowoutWin(g),
+        upsetWin: isUpsetWin(g), comebackWin: isComebackWin(g), closeCall: isCloseCall(g), blowoutWin: isBlowoutWin(g),
       };
       const fav = isFavoriteGame(g);
       const html = cardHtml(g, flags, fav);
@@ -946,15 +952,16 @@ function applyDemo(list) {
     g.home.possession = i % 2 === 0; g.away.possession = !g.home.possession;
     if (i === 10) peakLeads[g.id] = { teamId: g.home.id, lead: 24, at: Date.now() };
   });
-  pre.slice(scripts.length, scripts.length + 3).forEach((g, i) => {
+  pre.slice(scripts.length, scripts.length + 4).forEach((g, i) => {
     g.state = 'post'; g.period = 4; g.statusName = 'STATUS_FINAL';
     const fav = favorite(g) || g.home, dog = fav === g.home ? g.away : g.home;
     if (i === 0) { dog.score = 24; fav.score = 21; if (g.spread) g.spread = { ...g.spread, points: Math.max(g.spread.points, 10) }; } // upset
     else if (i === 1) { fav.score = 31; dog.score = 28; peakLeads[g.id] = { teamId: dog.id, lead: 21, at: Date.now() }; }         // comeback win
-    else { fav.score = 45; dog.score = 10; if (g.spread) g.spread = { ...g.spread, points: 3 }; }                                    // blowout win
+    else if (i === 2) { fav.score = 45; dog.score = 10; if (g.spread) g.spread = { ...g.spread, points: 3 }; }                        // blowout win
+    else { fav.score = 24; dog.score = 21; if (g.spread) g.spread = { ...g.spread, points: 21 }; }                                   // close call
   });
   // Targeted cases for the watch rings and the delay handling, picked from what is left.
-  const left = pre.slice(scripts.length + 3).filter(g => g.state === 'pre');
+  const left = pre.slice(scripts.length + 4).filter(g => g.state === 'pre');
   const take = pred => { const i = left.findIndex(pred); return i >= 0 ? left.splice(i, 1)[0] : null; };
   const live = (g, period, clock, status = 'STATUS_IN_PROGRESS') => {
     g.state = 'in'; g.period = period; g.clock = clock; g.statusName = status;

@@ -39,8 +39,9 @@ Watches (soft colored edge, no flash; one color per card in this priority, all b
 4. **Blowout watch** (yellow): the line was 7 or less and someone is up three scores or more.
 
 Finals get the same treatment: **Upset** (red, an underdog of 7+ won), **Comeback win**
-(green, the winner trailed by 3+ scores), **Blowout win** (yellow, won by 3+ score-tiers more
-than the line projected), in that priority.
+(green, the winner trailed by 3+ scores), **Close call** (blue, a favorite of 3+ scores won by
+one score), **Blowout win** (yellow, won by 3+ score-tiers more than the line projected), in
+that priority.
 
 Flashing alerts override any edge tint. **Delayed** games (weather etc.) get an orange ring, no
 flash, and drop to the bottom of Live. New games sit at the bottom of Live for their first

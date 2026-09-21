@@ -209,7 +209,7 @@ body {
               inset 0 0 28px color-mix(in srgb, var(--ring) 10%, transparent);
 }
 .w-upsetWatch, .w-upsetWin { --ring: #c8102e; }
-.w-goodGame                { --ring: #2f6fd6; }
+.w-goodGame, .w-closeCall  { --ring: #2f6fd6; }
 .w-comeback, .w-comebackWin { --ring: #12925a; }
 .w-blowout, .w-blowoutWin  { --ring: #c99700; }
 .badge.watch { background: var(--ring); color: #fff; }
