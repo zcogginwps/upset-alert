@@ -243,7 +243,11 @@ body {
 }
 
 /* Footer, states */
-.legend { margin-top: 26px; color: var(--muted); font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+.legend { margin-top: 26px; color: var(--muted); font-size: 12.5px; display: flex; flex-direction: column; gap: 5px; max-width: 560px; }
+.legend h3 { margin: 10px 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: 1.4px; color: var(--muted); }
+.legend h3:first-child { margin-top: 0; }
+.legend b { color: var(--text); font-weight: 700; }
+.legend .fine { margin: 12px 0 0; font-size: 11.5px; opacity: .8; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
 .swatch.upset { background: #c8102e; }
 .swatch.close { background: #2f6fd6; }

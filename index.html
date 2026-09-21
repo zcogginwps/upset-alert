@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
 </head>
 <body>
   <header class="top">
@@ -63,12 +63,20 @@
   </main>
 
   <footer class="legend">
-    <span><b>Alerts flash:</b> <i class="swatch upset"></i> Upset alert: favorite by 7+ trailing in the 4th · <i class="swatch close"></i> Close game: one score, under 6:00 left</span>
-    <span><b>Watches tint the card edge:</b> <i class="swatch upsetwatch"></i> Upset watch: favorite by 7+ trailing after Q1 · <i class="swatch goodgame"></i> Good game: one score, both ranked, after Q1 · <i class="swatch comeback"></i> Comeback: a lead shrank by 2+ scores to within 2 · <i class="swatch blowout"></i> Blowout: line was 7 or less, someone's up 3+ scores</span>
-    <span><b>Finals:</b> <i class="swatch upsetwatch"></i> Upset: an underdog of 7+ won · <i class="swatch comeback"></i> Comeback win: the winner trailed by 3+ scores · <i class="swatch goodgame"></i> Close call: a 3+ score favorite won by one score · <i class="swatch blowout"></i> Blowout win: won by 3+ scores more than the line projected</span>
-    <span>One tint per card when several apply: upset &gt; good game &gt; comeback &gt; blowout (finals: upset &gt; comeback win &gt; close call &gt; blowout win); flashing alerts override · <i class="swatch delayed"></i> Delayed games drop to the bottom of Live</span>
-    <span>New games sit at the bottom of Live for their first five minutes · Hold the Top 25 chip to switch rankings. Polls (AP, Coaches, CFP) are voted; ratings (Josh Pate's JP Poll, SP+, FPI, SRS, Elo) rate who'd be favored, shown as a top 25 · FCS and Div 2 teams show their own coaches-poll rank</span>
-    <span>Live games rank by tier (0–8, 9–16, 17–24…) then time left · Scores &amp; lines from ESPN</span>
+    <h3>Live games</h3>
+    <span><i class="swatch upset"></i> <b>Upset alert</b> (flashes) — favorite by 7+ trailing in the 4th</span>
+    <span><i class="swatch close"></i> <b>Close game</b> (flashes) — one-score game, under 6:00 left</span>
+    <span><i class="swatch upsetwatch"></i> <b>Upset watch</b> — favorite by 7+ trailing after the 1st quarter</span>
+    <span><i class="swatch goodgame"></i> <b>Good game watch</b> — one-score game, both teams ranked, after the 1st</span>
+    <span><i class="swatch comeback"></i> <b>Comeback watch</b> — a lead has shrunk by 2+ scores to within 2</span>
+    <span><i class="swatch blowout"></i> <b>Blowout watch</b> — line was 7 or less, someone's up 3+ scores</span>
+    <span><i class="swatch delayed"></i> <b>Delayed</b> — weather or other stoppage; drops to the bottom of Live</span>
+    <h3>Final games</h3>
+    <span><i class="swatch upsetwatch"></i> <b>Upset</b> — an underdog of 7+ won</span>
+    <span><i class="swatch comeback"></i> <b>Comeback win</b> — the winner trailed by 3+ scores</span>
+    <span><i class="swatch goodgame"></i> <b>Close call</b> — a 3+ score favorite won by one score</span>
+    <span><i class="swatch blowout"></i> <b>Blowout win</b> — won by 3+ scores more than the line projected</span>
+    <p class="fine">Hold the Top 25 chip to switch polls and ratings. Scores and lines from ESPN.</p>
   </footer>
 
   <div id="panel" class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden>
@@ -81,6 +89,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=34"></script>
+  <script src="app.js?v=35"></script>
 </body>
 </html>
