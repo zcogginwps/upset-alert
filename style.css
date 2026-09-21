@@ -199,18 +199,29 @@ body {
 .card.flash .team .rank, .card.flash .status .q, .card.flash .star { color: #fff; }
 .card.flash .star.on { color: var(--accent); }
 
-/* Watches: a coloured ring, no pulse. One ring per card (priority in app.js); the outlined
-   badges tell them apart from the filled alert badges. */
+/* Watches: a soft tinted edge that fades into the card instead of a hard ring. One colour
+   per card (priority in app.js); badges are filled like the alert badges. */
 .watch { --ring: var(--muted); }
-.card.watch { box-shadow: 0 0 0 2px var(--ring); border-color: var(--ring); }
-.w-upsetWatch { --ring: #c8102e; }
-.w-goodGame   { --ring: #2f6fd6; }
-.w-comeback   { --ring: #12925a; }
-.w-blowout    { --ring: #d9a400; }
-.badge.watch { background: var(--panel); border: 1.5px solid var(--ring); color: var(--ring); padding: 1px 7px; }
+.card.watch {
+  border-color: color-mix(in srgb, var(--ring) 55%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 28%, transparent),
+              0 0 14px color-mix(in srgb, var(--ring) 22%, transparent),
+              inset 0 0 28px color-mix(in srgb, var(--ring) 10%, transparent);
+}
+.w-upsetWatch, .w-upsetWin { --ring: #c8102e; }
+.w-goodGame                { --ring: #2f6fd6; }
+.w-comeback, .w-comebackWin { --ring: #12925a; }
+.w-blowout, .w-blowoutWin  { --ring: #c99700; }
+.badge.watch { background: var(--ring); color: #fff; }
 
-/* Delayed: orange ring, parked at the bottom of Live, nothing flashes */
-.card.delayed { --ring: var(--delayed); box-shadow: 0 0 0 2px var(--ring); border-color: var(--ring); }
+/* Delayed: same soft edge in orange, parked at the bottom of Live, nothing flashes */
+.card.delayed {
+  --ring: var(--delayed);
+  border-color: color-mix(in srgb, var(--ring) 55%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 28%, transparent),
+              0 0 14px color-mix(in srgb, var(--ring) 22%, transparent),
+              inset 0 0 28px color-mix(in srgb, var(--ring) 10%, transparent);
+}
 .card.delayed .status .q { color: var(--delayed); }
 
 /* New game: parked at the bottom of Live for its first two minutes */
@@ -238,7 +249,7 @@ body {
 .swatch.close { background: #2f6fd6; }
 .swatch.comeback { background: #12925a; }
 .swatch.upsetwatch { background: #c8102e; } .swatch.goodgame { background: #2f6fd6; } .swatch.blowout { background: #d9a400; } .swatch.delayed { background: #f28c28; }
-.swatch.ring { background: transparent; border: 2px solid currentColor; }
+
 .empty, .error { color: var(--muted); text-align: center; margin-top: 40px; }
 .error { color: #ff8a94; }
 

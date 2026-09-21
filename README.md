@@ -31,14 +31,18 @@ Alerts (flash):
 - **Close game** (blue pulse): one-score game with under 6:00 to play (or in OT).
 - Both at once fade between the two colors.
 
-Watches (colored ring, no flash; one ring per card in this priority, all badges shown):
+Watches (soft colored edge, no flash; one color per card in this priority, all badges shown):
 1. **Upset watch** (red): favorite by more than 7 trailing any time after the 1st quarter.
 2. **Good game watch** (blue): one-score game, both teams ranked, after the 1st quarter.
 3. **Comeback watch** (green): a lead has shrunk by 16+ points and the game is within 16;
    drops off if the margin climbs back above the closest tier it reached.
 4. **Blowout watch** (yellow): the line was 7 or less and someone is up three scores or more.
 
-Flashing alerts override any ring. **Delayed** games (weather etc.) get an orange ring, no
+Finals get the same treatment: **Upset** (red, an underdog of 7+ won), **Comeback win**
+(green, the winner trailed by 3+ scores), **Blowout win** (yellow, won by 3+ score-tiers more
+than the line projected), in that priority.
+
+Flashing alerts override any edge tint. **Delayed** games (weather etc.) get an orange ring, no
 flash, and drop to the bottom of Live. New games sit at the bottom of Live for their first
 five minutes; games whose clock reads 0:00 or 15:00 hold their spot through ESPN's
 quarter-break glitches.

@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '32';
+const APP_VERSION = '33';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -450,6 +450,29 @@ function isBlowoutWatch(g) {
   return isLive(g) && !!g.spread && g.spread.points <= BLOWOUT_MAX_SPREAD && tier(g) >= BLOWOUT_MIN_TIER;
 }
 
+// Final-game rings. All need the pregame line except the comeback, which uses the biggest
+// lead we tracked (quarter-end line scores plus anything seen live).
+function winner(g) { return g.state === 'post' && g.home.score !== g.away.score ? (g.home.score > g.away.score ? g.home : g.away) : null; }
+// Upset: an underdog of more than 7 won.
+function isUpsetWin(g) {
+  const w = winner(g), fav = favorite(g);
+  return !!w && !!fav && g.spread.points > UPSET_MIN_SPREAD && w !== fav;
+}
+// Comeback win: the winner trailed by three scores or more at some point.
+function isComebackWin(g) {
+  const w = winner(g), peak = peakLeads[g.id];
+  return !!w && !!peak && !!peak.teamId && peak.teamId !== w.id && peak.lead >= TIER_SIZE * 2 + 1;
+}
+// Blowout win: won by at least three score-tiers more than the line projected. A favorite
+// laying 3 (tier 1) that wins by 27 (tier 4) qualifies; so does an underdog winning by 17+.
+function isBlowoutWin(g) {
+  const w = winner(g), fav = favorite(g);
+  if (!w || !g.spread) return false;
+  const projected = fav ? (w === fav ? g.spread.points : -g.spread.points) : 0;
+  const projectedTier = projected <= 0 ? 0 : Math.ceil(projected / TIER_SIZE);
+  return tier(g) - projectedTier >= 3;
+}
+
 // ESPN sometimes flags a game "in progress" before kickoff, so a brand-new game would
 // otherwise rocket to the top as a 0-0 one-score game. Hold it at the bottom of Live for
 // the first two minutes of game clock instead.
@@ -589,6 +612,9 @@ function cardHtml(g, flags, fav) {
   if (flags.goodGame) badges.push('<span class="badge watch w-goodGame">Good game watch</span>');
   if (flags.comeback) badges.push('<span class="badge watch w-comeback">Comeback watch</span>');
   if (flags.blowout) badges.push('<span class="badge watch w-blowout">Blowout watch</span>');
+  if (flags.upsetWin) badges.push('<span class="badge watch w-upsetWin">Upset</span>');
+  if (flags.comebackWin) badges.push('<span class="badge watch w-comebackWin">Comeback win</span>');
+  if (flags.blowoutWin) badges.push('<span class="badge watch w-blowoutWin">Blowout win</span>');
   if (flags.newGame) badges.push('<span class="badge new">New game</span>');
   return `
     ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
@@ -611,8 +637,10 @@ let prevLiveOrder = new Map(); // game id -> index within the live list
 let hasRendered = false;
 let suppressNextSlide = false; // set when the tab comes back from the background
 
-// Border priority when several watches apply (Zane to review): upset > good game > comeback > blowout.
+// Ring priority when several apply (approved by Zane): upset > good game > comeback > blowout,
+// and for finals: upset > comeback win > blowout win.
 const WATCH_ORDER = ['upsetWatch', 'goodGame', 'comeback', 'blowout'];
+const FINAL_ORDER = ['upsetWin', 'comebackWin', 'blowoutWin'];
 
 function orderLive(live) {
   const delayed = live.filter(isDelayed).sort((a, b) => a.date - b.date);
@@ -658,6 +686,8 @@ function renderGames(games) {
         // watches (border only), in priority order
         upsetWatch: !delayed && isUpsetWatch(g), goodGame: !delayed && isGoodGameWatch(g),
         comeback: !delayed && isComebackWatch(g), blowout: !delayed && isBlowoutWatch(g),
+        // final-game rings
+        upsetWin: isUpsetWin(g), comebackWin: isComebackWin(g), blowoutWin: isBlowoutWin(g),
       };
       const fav = isFavoriteGame(g);
       const html = cardHtml(g, flags, fav);
@@ -676,7 +706,7 @@ function renderGames(games) {
       // border. Badges show everything that applies.
       const active = ['upset', 'close'].filter(k => flags[k]);
       const flash = active.length ? ` flash f-${active.join('-')}` : '';
-      const watch = flash ? '' : (WATCH_ORDER.find(k => flags[k]) || '');
+      const watch = flash ? '' : ((g.state === 'post' ? FINAL_ORDER : WATCH_ORDER).find(k => flags[k]) || '');
       const wasFlashing = entry.el.classList.contains('flash');
       entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${flash}${watch ? ` watch w-${watch}` : ''}${flags.delayed ? ' delayed' : ''}${flags.newGame ? ' newgame' : ''}${entry.el.classList.contains('moving') ? ' moving' : ''}`;
       // Every flashing card runs on one shared 2s clock so the pulses stay in step.
@@ -916,9 +946,12 @@ function applyDemo(list) {
     g.home.possession = i % 2 === 0; g.away.possession = !g.home.possession;
     if (i === 10) peakLeads[g.id] = { teamId: g.home.id, lead: 24, at: Date.now() };
   });
-  pre.slice(scripts.length, scripts.length + 3).forEach(g => {
+  pre.slice(scripts.length, scripts.length + 3).forEach((g, i) => {
     g.state = 'post'; g.period = 4; g.statusName = 'STATUS_FINAL';
-    g.away.score = 17; g.home.score = 31;
+    const fav = favorite(g) || g.home, dog = fav === g.home ? g.away : g.home;
+    if (i === 0) { dog.score = 24; fav.score = 21; if (g.spread) g.spread = { ...g.spread, points: Math.max(g.spread.points, 10) }; } // upset
+    else if (i === 1) { fav.score = 31; dog.score = 28; peakLeads[g.id] = { teamId: dog.id, lead: 21, at: Date.now() }; }         // comeback win
+    else { fav.score = 45; dog.score = 10; if (g.spread) g.spread = { ...g.spread, points: 3 }; }                                    // blowout win
   });
   // Targeted cases for the watch rings and the delay handling, picked from what is left.
   const left = pre.slice(scripts.length + 3).filter(g => g.state === 'pre');

@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
   <header class="top">
@@ -64,8 +64,9 @@
 
   <footer class="legend">
     <span><b>Alerts flash:</b> <i class="swatch upset"></i> Upset alert: favorite by 7+ trailing in the 4th · <i class="swatch close"></i> Close game: one score, under 6:00 left</span>
-    <span><b>Watches ring the card:</b> <i class="swatch upsetwatch"></i> Upset watch: favorite by 7+ trailing after Q1 · <i class="swatch goodgame"></i> Good game: one score, both ranked, after Q1 · <i class="swatch comeback"></i> Comeback: a lead shrank by 2+ scores to within 2 · <i class="swatch blowout"></i> Blowout: line was 7 or less, someone's up 3+ scores</span>
-    <span>Ring priority when several apply: upset &gt; good game &gt; comeback &gt; blowout; flashing alerts override any ring · <i class="swatch delayed"></i> Delayed games drop to the bottom of Live</span>
+    <span><b>Watches tint the card edge:</b> <i class="swatch upsetwatch"></i> Upset watch: favorite by 7+ trailing after Q1 · <i class="swatch goodgame"></i> Good game: one score, both ranked, after Q1 · <i class="swatch comeback"></i> Comeback: a lead shrank by 2+ scores to within 2 · <i class="swatch blowout"></i> Blowout: line was 7 or less, someone's up 3+ scores</span>
+    <span><b>Finals:</b> <i class="swatch upsetwatch"></i> Upset: an underdog of 7+ won · <i class="swatch comeback"></i> Comeback win: the winner trailed by 3+ scores · <i class="swatch blowout"></i> Blowout win: won by 3+ scores more than the line projected</span>
+    <span>One tint per card when several apply: upset &gt; good game &gt; comeback &gt; blowout (finals: upset &gt; comeback win &gt; blowout win); flashing alerts override · <i class="swatch delayed"></i> Delayed games drop to the bottom of Live</span>
     <span>New games sit at the bottom of Live for their first five minutes · Hold the Top 25 chip to switch rankings. Polls (AP, Coaches, CFP) are voted; ratings (Josh Pate's JP Poll, SP+, FPI, SRS, Elo) rate who'd be favored, shown as a top 25 · FCS and Div 2 teams show their own coaches-poll rank</span>
     <span>Live games rank by tier (0–8, 9–16, 17–24…) then time left · Scores &amp; lines from ESPN</span>
   </footer>
@@ -80,6 +81,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=32"></script>
+  <script src="app.js?v=33"></script>
 </body>
 </html>
