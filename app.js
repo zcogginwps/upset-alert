@@ -49,7 +49,9 @@ const CLOSE_SECONDS_LEFT = 360; // under 6:00 to go
 const TIER_SIZE = 8;
 const COMEBACK_CUT = 16;        // lead has shrunk by 2+ scores...
 const COMEBACK_MAX_DIFF = 16;   // ...and the game is now within 2 scores
-const NEW_GAME_CLOCK = 780;     // first 2:00 of Q1 (clock >= 13:00) sits at the bottom as "new game"
+const NEW_GAME_CLOCK = 600;     // first 5:00 of Q1 (clock >= 10:00) sits at the bottom as "new game"
+const BLOWOUT_MAX_SPREAD = 7;   // blowout watch: line was this close or closer...
+const BLOWOUT_MIN_TIER = 3;     // ...and someone is up 3+ scores
 const REORDER_MS = 1500;        // how slowly cards slide when the order changes
 const FLASH_MS = 2000;          // one pulse for every alert colour (keep in sync with style.css)
 
@@ -62,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '31';
+const APP_VERSION = '32';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -426,6 +428,28 @@ function isComebackWatch(g) {
   return st.on;
 }
 
+// Weather or other stoppage. ESPN reports these as STATUS_DELAYED / STATUS_SUSPENDED (state
+// stays "in" for an in-game delay, "pre" for a delayed kickoff).
+function isDelayed(g) {
+  return g.state !== 'post' && /DELAY|SUSPEND|HALT/.test(g.statusName);
+}
+
+// "Watch" states: quieter than the flashing alerts - a coloured border, no pulse.
+// Upset watch: same test as the upset alert but any time after the 1st quarter.
+function isUpsetWatch(g) {
+  if (!isLive(g) || !g.spread || g.spread.points <= UPSET_MIN_SPREAD) return false;
+  const fav = favorite(g), dog = underdog(g);
+  return !!fav && g.period >= 2 && fav.score < dog.score;
+}
+// Good game watch: a one-score game between two ranked teams, after the 1st quarter.
+function isGoodGameWatch(g) {
+  return isLive(g) && g.period >= 2 && diff(g) <= CLOSE_MAX_DIFF && !!rankInfo(g.home) && !!rankInfo(g.away);
+}
+// Blowout watch: the line said toss-up (7 or less) but someone is up three scores or more.
+function isBlowoutWatch(g) {
+  return isLive(g) && !!g.spread && g.spread.points <= BLOWOUT_MAX_SPREAD && tier(g) >= BLOWOUT_MIN_TIER;
+}
+
 // ESPN sometimes flags a game "in progress" before kickoff, so a brand-new game would
 // otherwise rocket to the top as a 0-0 one-score game. Hold it at the bottom of Live for
 // the first two minutes of game clock instead.
@@ -522,6 +546,9 @@ function statusHtml(g) {
     const ot = g.period > 4 ? (g.period === 5 ? '/OT' : `/${g.period - 4}OT`) : '';
     return `<span class="q">Final${ot}</span>`;
   }
+  if (isDelayed(g)) {
+    return `<span class="q">Delayed</span><span class="clock">${esc(g.period ? `${periodLabel(g)} ${g.displayClock}` : g.statusDetail)}</span>`;
+  }
   const label = periodLabel(g);
   const showClock = !/Half|End/.test(label) && !(g.period > 4 && g.clock === 0);
   return `<span class="q">${esc(label)}</span>${showClock ? `<span class="clock">${esc(g.displayClock)}</span>` : ''}`;
@@ -555,9 +582,13 @@ const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2
 
 function cardHtml(g, flags, fav) {
   const badges = [];
+  if (flags.delayed) badges.push('<span class="badge delayed">Delayed</span>');
   if (flags.upset) badges.push('<span class="badge upset">Upset alert</span>');
   if (flags.close) badges.push('<span class="badge close">Close game</span>');
-  if (flags.comeback) badges.push('<span class="badge comeback">Comeback watch</span>');
+  if (flags.upsetWatch && !flags.upset) badges.push('<span class="badge watch w-upsetWatch">Upset watch</span>');
+  if (flags.goodGame) badges.push('<span class="badge watch w-goodGame">Good game watch</span>');
+  if (flags.comeback) badges.push('<span class="badge watch w-comeback">Comeback watch</span>');
+  if (flags.blowout) badges.push('<span class="badge watch w-blowout">Blowout watch</span>');
   if (flags.newGame) badges.push('<span class="badge new">New game</span>');
   return `
     ${badges.length ? `<div class="badges">${badges.join('')}</div>` : ''}
@@ -580,16 +611,20 @@ let prevLiveOrder = new Map(); // game id -> index within the live list
 let hasRendered = false;
 let suppressNextSlide = false; // set when the tab comes back from the background
 
+// Border priority when several watches apply (Zane to review): upset > good game > comeback > blowout.
+const WATCH_ORDER = ['upsetWatch', 'goodGame', 'comeback', 'blowout'];
+
 function orderLive(live) {
-  const newGames = live.filter(isNewGame).sort((a, b) => a.date - b.date);
-  const frozen = live.filter(g => !isNewGame(g) && isClockUnstable(g) && prevLiveOrder.has(g.id));
-  const rest = live.filter(g => !newGames.includes(g) && !frozen.includes(g)).sort(compareGames);
+  const delayed = live.filter(isDelayed).sort((a, b) => a.date - b.date);
+  const newGames = live.filter(g => !isDelayed(g) && isNewGame(g)).sort((a, b) => a.date - b.date);
+  const frozen = live.filter(g => !isDelayed(g) && !isNewGame(g) && isClockUnstable(g) && prevLiveOrder.has(g.id));
+  const rest = live.filter(g => !delayed.includes(g) && !newGames.includes(g) && !frozen.includes(g)).sort(compareGames);
   // Put frozen games back at the index they held last time (lowest index first so the
   // positions stay meaningful), then park the new games at the bottom.
   for (const g of frozen.sort((a, b) => prevLiveOrder.get(a.id) - prevLiveOrder.get(b.id))) {
     rest.splice(Math.min(prevLiveOrder.get(g.id), rest.length), 0, g);
   }
-  return rest.concat(newGames);
+  return rest.concat(newGames, delayed); // delayed games sit at the very bottom of Live
 }
 
 function renderGames(games) {
@@ -615,8 +650,14 @@ function renderGames(games) {
   for (const state of ['in', 'pre', 'post']) {
     const list = els.lists[state];
     for (const g of perBucket[state]) {
+      const delayed = isDelayed(g);
       const flags = {
-        upset: isUpsetAlert(g), close: isCloseGame(g), comeback: isComebackWatch(g), newGame: isNewGame(g),
+        delayed, newGame: !delayed && isNewGame(g),
+        // flashing alerts (suspended while delayed - nothing is happening)
+        upset: !delayed && isUpsetAlert(g), close: !delayed && isCloseGame(g),
+        // watches (border only), in priority order
+        upsetWatch: !delayed && isUpsetWatch(g), goodGame: !delayed && isGoodGameWatch(g),
+        comeback: !delayed && isComebackWatch(g), blowout: !delayed && isBlowoutWatch(g),
       };
       const fav = isFavoriteGame(g);
       const html = cardHtml(g, flags, fav);
@@ -631,11 +672,13 @@ function renderGames(games) {
       // Toggling classes (not rebuilding nodes) keeps the flash animation from restarting on every poll.
       // One alert flashes its own colour; two alternate between both colours; all three fall
       // back to upset + close. Badges still show every alert that applies.
-      let active = ['upset', 'close', 'comeback'].filter(k => flags[k]);
-      if (active.length === 3) active = ['upset', 'close'];
+      // Flashing alerts beat every watch; among watches the first in WATCH_ORDER wins the
+      // border. Badges show everything that applies.
+      const active = ['upset', 'close'].filter(k => flags[k]);
       const flash = active.length ? ` flash f-${active.join('-')}` : '';
+      const watch = flash ? '' : (WATCH_ORDER.find(k => flags[k]) || '');
       const wasFlashing = entry.el.classList.contains('flash');
-      entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${flash}${flags.newGame ? ' newgame' : ''}${entry.el.classList.contains('moving') ? ' moving' : ''}`;
+      entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${flash}${watch ? ` watch w-${watch}` : ''}${flags.delayed ? ' delayed' : ''}${flags.newGame ? ' newgame' : ''}${entry.el.classList.contains('moving') ? ' moving' : ''}`;
       // Every flashing card runs on one shared 2s clock so the pulses stay in step.
       if (flash && !wasFlashing) entry.el.style.animationDelay = `-${Math.round(performance.now() % FLASH_MS)}ms`;
       if (!flash) entry.el.style.animationDelay = '';
@@ -877,6 +920,26 @@ function applyDemo(list) {
     g.state = 'post'; g.period = 4; g.statusName = 'STATUS_FINAL';
     g.away.score = 17; g.home.score = 31;
   });
+  // Targeted cases for the watch rings and the delay handling, picked from what is left.
+  const left = pre.slice(scripts.length + 3).filter(g => g.state === 'pre');
+  const take = pred => { const i = left.findIndex(pred); return i >= 0 ? left.splice(i, 1)[0] : null; };
+  const live = (g, period, clock, status = 'STATUS_IN_PROGRESS') => {
+    g.state = 'in'; g.period = period; g.clock = clock; g.statusName = status;
+    g.displayClock = `${Math.floor(clock / 60)}:${String(clock % 60).padStart(2, '0')}`;
+  };
+  let g;
+  if ((g = take(x => x.spread && x.spread.points > 7))) {      // upset watch: favorite down in Q2
+    live(g, 2, 480); const fav = favorite(g), dog = fav === g.home ? g.away : g.home; fav.score = 10; dog.score = 14;
+  }
+  if ((g = take(x => rankInfo(x.home) && rankInfo(x.away)))) { // good game watch: ranked vs ranked, one score
+    live(g, 3, 700); g.away.score = 20; g.home.score = 17;
+  }
+  if ((g = take(x => x.spread && x.spread.points <= 7))) {     // blowout watch: toss-up line, 24-point lead
+    live(g, 3, 300); g.away.score = 3; g.home.score = 27;
+  }
+  if ((g = take(() => true))) {                                // weather delay in the 2nd quarter
+    live(g, 2, 512, 'STATUS_DELAYED'); g.away.score = 7; g.home.score = 10;
+  }
   return out;
 }
 

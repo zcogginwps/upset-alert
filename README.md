@@ -25,15 +25,23 @@ alert animations on a non-game day.
   better-ranked matchup.
 - **Final** games at the bottom, starred games first.
 
-Alerts:
-- **Upset alert** (red pulse): a team favored by more than 7 is trailing in the 4th
-  quarter or overtime.
+Alerts (flash):
+- **Upset alert** (red pulse): a team favored by more than 7 is trailing in the 4th quarter
+  or overtime.
 - **Close game** (blue pulse): one-score game with under 6:00 to play (or in OT).
-- **Comeback watch** (yellow pulse): a lead has shrunk by 16+ points and the game is now
-  within 16. Drops off if the margin climbs back above the closest tier it reached.
-- Two alerts at once fade between both colors; three fall back to upset + close. New games
-  sit at the bottom of Live for their first two minutes; games whose clock reads 0:00 or
-  15:00 hold their spot through ESPN's quarter-break glitches.
+- Both at once fade between the two colors.
+
+Watches (colored ring, no flash; one ring per card in this priority, all badges shown):
+1. **Upset watch** (red): favorite by more than 7 trailing any time after the 1st quarter.
+2. **Good game watch** (blue): one-score game, both teams ranked, after the 1st quarter.
+3. **Comeback watch** (green): a lead has shrunk by 16+ points and the game is within 16;
+   drops off if the margin climbs back above the closest tier it reached.
+4. **Blowout watch** (yellow): the line was 7 or less and someone is up three scores or more.
+
+Flashing alerts override any ring. **Delayed** games (weather etc.) get an orange ring, no
+flash, and drop to the bottom of Live. New games sit at the bottom of Live for their first
+five minutes; games whose clock reads 0:00 or 15:00 hold their spot through ESPN's
+quarter-break glitches.
 
 Data is ESPN's public scoreboard feed. ESPN drops the betting line once a game ends, so the
 app remembers each game's pregame spread in localStorage.

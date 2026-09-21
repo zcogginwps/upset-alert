@@ -14,6 +14,7 @@
   --comeback: #9a7a12;   /* amber-yellow, kept dark enough for white text */
   --comeback-dim: #2c2510;
   --new: #5b6478;
+  --delayed: #f28c28;
   --chip: #232a3a;
   --chip-on: #ffd166;
 }
@@ -180,26 +181,37 @@ body {
   padding: 2px 8px; border-radius: 999px; color: #fff;
 }
 
-/* Alerts: every alert pulses on the same 2s clock. One alert fades between its dim and
-   full colour; two alerts fade between their two colours (--fa / --fb). */
+/* Flashing alerts (upset, close game): every alert pulses on the same 2s clock. One alert
+   fades between its dim and full colour; both fade between the two (--fa / --fb). */
 .badge.upset { background: #c8102e; }
 .badge.close { background: #2f6fd6; }
-.badge.comeback { background: #d9a400; color: #1a1400; }
 .badge.new { background: var(--new); }
+.badge.delayed { background: var(--delayed); color: #1a0e00; }
 
 .card.flash { animation: flash 2s ease-in-out infinite; border-color: rgba(255,255,255,.25); }
 @keyframes flash { 0%, 100% { background: var(--fa); } 50% { background: var(--fb); } }
-.f-upset          { --fa: var(--upset-dim);    --fb: var(--upset); }
-.f-close          { --fa: var(--close-dim);    --fb: var(--close); }
-.f-comeback       { --fa: var(--comeback-dim); --fb: var(--comeback); }
-.f-upset-close    { --fa: var(--upset);        --fb: var(--close); }
-.f-upset-comeback { --fa: var(--upset);        --fb: var(--comeback); }
-.f-close-comeback { --fa: var(--close);        --fb: var(--comeback); }
+.f-upset       { --fa: var(--upset-dim); --fb: var(--upset); }
+.f-close       { --fa: var(--close-dim); --fb: var(--close); }
+.f-upset-close { --fa: var(--upset);     --fb: var(--close); }
 
 .card.flash .team .rec, .card.flash .meta, .card.flash .status .clock { color: rgba(255,255,255,.8); }
 .card.flash .meta { border-top-color: rgba(255,255,255,.2); }
 .card.flash .team .rank, .card.flash .status .q, .card.flash .star { color: #fff; }
 .card.flash .star.on { color: var(--accent); }
+
+/* Watches: a coloured ring, no pulse. One ring per card (priority in app.js); the outlined
+   badges tell them apart from the filled alert badges. */
+.watch { --ring: var(--muted); }
+.card.watch { box-shadow: 0 0 0 2px var(--ring); border-color: var(--ring); }
+.w-upsetWatch { --ring: #c8102e; }
+.w-goodGame   { --ring: #2f6fd6; }
+.w-comeback   { --ring: #12925a; }
+.w-blowout    { --ring: #d9a400; }
+.badge.watch { background: var(--panel); border: 1.5px solid var(--ring); color: var(--ring); padding: 1px 7px; }
+
+/* Delayed: orange ring, parked at the bottom of Live, nothing flashes */
+.card.delayed { --ring: var(--delayed); box-shadow: 0 0 0 2px var(--ring); border-color: var(--ring); }
+.card.delayed .status .q { color: var(--delayed); }
 
 /* New game: parked at the bottom of Live for its first two minutes */
 .card.newgame { border-style: dashed; }
@@ -224,7 +236,9 @@ body {
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
 .swatch.upset { background: #c8102e; }
 .swatch.close { background: #2f6fd6; }
-.swatch.comeback { background: #d9a400; }
+.swatch.comeback { background: #12925a; }
+.swatch.upsetwatch { background: #c8102e; } .swatch.goodgame { background: #2f6fd6; } .swatch.blowout { background: #d9a400; } .swatch.delayed { background: #f28c28; }
+.swatch.ring { background: transparent; border: 2px solid currentColor; }
 .empty, .error { color: var(--muted); text-align: center; margin-top: 40px; }
 .error { color: #ff8a94; }
 

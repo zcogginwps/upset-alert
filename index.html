@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
   <header class="top">
@@ -63,12 +63,10 @@
   </main>
 
   <footer class="legend">
-    <span><i class="swatch upset"></i> Upset alert: favorite by 7+ trailing in the 4th</span>
-    <span><i class="swatch close"></i> Close game: one score, under 6:00 left</span>
-    <span><i class="swatch comeback"></i> Comeback watch: a lead has shrunk by 2+ scores and it's now a 2-score game</span>
-    <span>Two alerts at once fade between both colors; three fall back to upset + close</span>
-    <span>Hold the Top 25 chip to switch rankings. Polls (AP, Coaches, CFP) are voted; ratings (Josh Pate's JP Poll, SP+, FPI, SRS, Elo) rate who'd be favored, shown as a top 25 · FCS and Div 2 teams show their own coaches-poll rank</span>
-    <span>New games sit at the bottom of Live for their first two minutes</span>
+    <span><b>Alerts flash:</b> <i class="swatch upset"></i> Upset alert: favorite by 7+ trailing in the 4th · <i class="swatch close"></i> Close game: one score, under 6:00 left</span>
+    <span><b>Watches ring the card:</b> <i class="swatch upsetwatch"></i> Upset watch: favorite by 7+ trailing after Q1 · <i class="swatch goodgame"></i> Good game: one score, both ranked, after Q1 · <i class="swatch comeback"></i> Comeback: a lead shrank by 2+ scores to within 2 · <i class="swatch blowout"></i> Blowout: line was 7 or less, someone's up 3+ scores</span>
+    <span>Ring priority when several apply: upset &gt; good game &gt; comeback &gt; blowout; flashing alerts override any ring · <i class="swatch delayed"></i> Delayed games drop to the bottom of Live</span>
+    <span>New games sit at the bottom of Live for their first five minutes · Hold the Top 25 chip to switch rankings. Polls (AP, Coaches, CFP) are voted; ratings (Josh Pate's JP Poll, SP+, FPI, SRS, Elo) rate who'd be favored, shown as a top 25 · FCS and Div 2 teams show their own coaches-poll rank</span>
     <span>Live games rank by tier (0–8, 9–16, 17–24…) then time left · Scores &amp; lines from ESPN</span>
   </footer>
 
@@ -82,6 +80,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=32"></script>
 </body>
 </html>
