@@ -175,6 +175,20 @@ body {
 .meta .tv { margin-left: auto; font-weight: 600; }
 .meta .tier { font-size: 11px; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
 
+/* Extra line on a flashing close game: down & distance and where the ball is */
+.sitline {
+  grid-column: 1 / -1; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums;
+}
+.sitline .spot { color: var(--muted); font-weight: 600; }
+.sitline .rz {
+  margin-left: auto; font-size: 10px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+  background: var(--upset); color: #fff; border-radius: 999px; padding: 2px 7px;
+}
+.card.flash .sitline { border-top-color: rgba(255,255,255,.2); }
+.card.flash .sitline .spot { color: rgba(255,255,255,.8); }
+
 .badges { position: absolute; top: -9px; left: 10px; display: flex; gap: 6px; }
 .badge {
   font-size: 10.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;

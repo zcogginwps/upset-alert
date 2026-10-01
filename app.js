@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '43';
+const APP_VERSION = '44';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -327,6 +327,22 @@ function parseBroadcast(comp) {
   return geo ? geo.media.shortName : '';
 }
 
+// Down & distance and the ball spot, for the extra line on a flashing close game. ESPN only
+// fills these in while a game is actually being played, and the ready-made text is sometimes
+// missing even then, so fall back to building it from the raw down/distance.
+const ORDINALS = ['', '1st', '2nd', '3rd', '4th'];
+function parseSituation(sit) {
+  if (!sit) return null;
+  let downDistance = sit.downDistanceText || sit.shortDownDistanceText || '';
+  if (!downDistance && sit.down >= 1 && sit.down <= 4) {
+    const dist = sit.distance === 0 ? 'Goal' : sit.distance;
+    downDistance = dist == null ? ORDINALS[sit.down] : `${ORDINALS[sit.down]} & ${dist}`;
+  }
+  const ball = sit.possessionText || '';
+  if (!downDistance && !ball) return null;
+  return { downDistance, ball, redZone: !!sit.isRedZone };
+}
+
 function parseEvent(ev, levelKeys) {
   const comp = ev.competitions[0];
   const homeC = comp.competitors.find(c => c.homeAway === 'home');
@@ -359,6 +375,7 @@ function parseEvent(ev, levelKeys) {
     displayClock: st.displayClock || '',
     home, away, spread,
     tv: parseBroadcast(comp),
+    situation: parseSituation(comp.situation),
     confKeys,
   };
   trackPeakLead(g, home.lines, away.lines);
@@ -468,14 +485,16 @@ function isCloseCall(g) {
   const w = winner(g), fav = favorite(g);
   return !!w && !!fav && w === fav && Math.ceil(g.spread.points / TIER_SIZE) >= 3 && diff(g) <= CLOSE_MAX_DIFF;
 }
-// Blowout win: won by at least three score-tiers more than the line projected. A favorite
-// laying 3 (tier 1) that wins by 27 (tier 4) qualifies; so does an underdog winning by 17+.
+// Blowout win: beat the projected margin by three scores or more. Measured in POINTS, not
+// score-tiers: rounding each side to a tier first made the result depend on which side of a
+// boundary the line happened to fall (a -8.5 favourite counted as a two-score favourite, and
+// a 1.5-point underdog got a far easier bar than a 1.5-point favourite).
+const BLOWOUT_WIN_MARGIN = TIER_SIZE * 2 + 1; // 17 points clear of the line = three scores
 function isBlowoutWin(g) {
   const w = winner(g), fav = favorite(g);
   if (!w || !g.spread) return false;
   const projected = fav ? (w === fav ? g.spread.points : -g.spread.points) : 0;
-  const projectedTier = projected <= 0 ? 0 : Math.ceil(projected / TIER_SIZE);
-  return tier(g) - projectedTier >= 3;
+  return diff(g) - projected >= BLOWOUT_WIN_MARGIN;
 }
 
 // ESPN sometimes flags a game "in progress" before kickoff, so a brand-new game would
@@ -608,6 +627,16 @@ function spreadText(g) {
 
 const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.7l-5.9 3.1 1.2-6.5L2.5 9.7l6.6-.9z"/></svg>';
 
+// Only shown while a game is flashing as a close game, where the down matters.
+function situationHtml(g) {
+  const { downDistance, ball, redZone } = g.situation;
+  return `<div class="sitline${redZone ? ' redzone' : ''}">
+    ${downDistance ? `<span class="dd">${esc(downDistance)}</span>` : ''}
+    ${ball ? `<span class="spot">${esc(ball)}</span>` : ''}
+    ${redZone ? '<span class="rz">Red zone</span>' : ''}
+  </div>`;
+}
+
 function cardHtml(g, flags, fav) {
   const badges = [];
   if (flags.delayed) badges.push('<span class="badge delayed">Delayed</span>');
@@ -634,7 +663,8 @@ function cardHtml(g, flags, fav) {
       <span class="spread">${esc(spreadText(g))}</span>
       ${isLive(g) ? `<span class="tier">${tierLabel(g)}</span>` : ''}
       <span class="tv">${esc(g.tv || 'TV TBD')}</span>
-    </div>`;
+    </div>
+    ${flags.close && g.situation ? situationHtml(g) : ''}`;
 }
 
 // Live-list order from the previous render, so games with an unstable clock can hold
@@ -954,6 +984,9 @@ function applyDemo(list) {
       g.away.score = dogIsHome ? Math.min(a, h) : Math.max(a, h);
     } else { g.away.score = a; g.home.score = h; }
     g.home.possession = i % 2 === 0; g.away.possession = !g.home.possession;
+    const spots = [['2nd & 7', 'ALA 35', false], ['1st & 10', 'LSU 48', false], ['3rd & 2', 'UGA 12', true],
+                   ['4th & 1', 'OSU 44', false], ['1st & Goal', 'MICH 6', true], ['2nd & 14', 'TEX 22', false]];
+    g.situation = { downDistance: spots[i % spots.length][0], ball: spots[i % spots.length][1], redZone: spots[i % spots.length][2] };
     if (i === 10) peakLeads[g.id] = { teamId: g.home.id, lead: 24, at: Date.now() };
   });
   pre.slice(scripts.length, scripts.length + 4).forEach((g, i) => {

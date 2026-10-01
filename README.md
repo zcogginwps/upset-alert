@@ -28,7 +28,8 @@ alert animations on a non-game day.
 Alerts (flash):
 - **Upset alert** (red pulse): a team favored by more than 7 is trailing in the 4th quarter
   or overtime.
-- **Close game** (blue pulse): one-score game with under 6:00 to play (or in OT).
+- **Close game** (blue pulse): one-score game with under 6:00 to play (or in OT). These cards
+  also show down &amp; distance and the ball spot.
 - Both at once fade between the two colors.
 
 Watches (soft colored edge, no flash; one color per card in this priority, all badges shown):
