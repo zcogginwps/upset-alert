@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '42';
+const APP_VERSION = '43';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -649,9 +649,13 @@ const WATCH_ORDER = ['upsetWatch', 'goodGame', 'comeback', 'blowout'];
 const FINAL_ORDER = ['upsetWin', 'comebackWin', 'closeCall', 'blowoutWin'];
 
 function orderLive(live) {
+  // A starred game that is actually being played always sorts normally (and so leads the
+  // list): neither the new-game hold nor the quarter-break freeze may push it down. Only a
+  // delay, where play has stopped, can move a favourite off the top.
+  const held = g => !isFavoriteGame(g);
   const delayed = live.filter(isDelayed).sort((a, b) => a.date - b.date);
-  const newGames = live.filter(g => !isDelayed(g) && isNewGame(g)).sort((a, b) => a.date - b.date);
-  const frozen = live.filter(g => !isDelayed(g) && !isNewGame(g) && isClockUnstable(g) && prevLiveOrder.has(g.id));
+  const newGames = live.filter(g => !isDelayed(g) && held(g) && isNewGame(g)).sort((a, b) => a.date - b.date);
+  const frozen = live.filter(g => !isDelayed(g) && held(g) && !isNewGame(g) && isClockUnstable(g) && prevLiveOrder.has(g.id));
   const rest = live.filter(g => !delayed.includes(g) && !newGames.includes(g) && !frozen.includes(g)).sort(compareGames);
   // Put frozen games back at the index they held last time (lowest index first so the
   // positions stay meaningful), then park the new games at the bottom.
