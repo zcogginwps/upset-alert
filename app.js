@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '47';
+const APP_VERSION = '48';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -635,10 +635,9 @@ const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2
 // Only shown while a game is flashing as a close game, where the down matters.
 function situationHtml(g) {
   const { downDistance, ball, redZone } = g.situation;
-  return `<div class="sitline${redZone ? ' redzone' : ''}">
+  return `<div class="sitline">
     ${downDistance ? `<span class="dd">${esc(downDistance)}</span>` : ''}
-    ${ball ? `<span class="spot">${esc(ball)}</span>` : ''}
-    ${redZone ? '<span class="rz">Red zone</span>' : ''}
+    ${ball ? `<span class="spot${redZone ? ' rz' : ''}"${redZone ? ' title="Red zone"' : ''}>${esc(ball)}</span>` : ''}
   </div>`;
 }
 
@@ -664,12 +663,12 @@ function cardHtml(g, flags, fav) {
       ${teamHtml(g.home, g, g.away)}
     </div>
     <div class="status">${statusHtml(g)}</div>
+    ${flags.close && g.situation ? situationHtml(g) : ''}
     <div class="meta">
       <span class="spread">${esc(spreadText(g))}</span>
       ${isLive(g) ? `<span class="tier">${tierLabel(g)}</span>` : ''}
       <span class="tv">${esc(g.tv || 'TV TBD')}</span>
-    </div>
-    ${flags.close && g.situation ? situationHtml(g) : ''}`;
+    </div>`;
 }
 
 // Live-list order from the previous render, so games with an unstable clock can hold
