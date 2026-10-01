@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '45';
+const APP_VERSION = '46';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -489,12 +489,12 @@ function isCloseCall(g) {
 // score-tiers: rounding each side to a tier first made the result depend on which side of a
 // boundary the line happened to fall (a -8.5 favourite counted as a two-score favourite, and
 // a 1.5-point underdog got a far easier bar than a 1.5-point favourite).
-// 28 points clear of the line. Calibrated on weeks 1-4 of 2026 (331 finals with a line):
-// at 28 this fires on ~4% of finals, about as often as an Upset, where 17 fired on 20% of
-// them. The spread of margin-over-the-number among winners has a stdev of ~13, so 28 is
-// roughly two standard deviations - and the median CFB winning margin is 23, so a merely
-// lopsided score means little on its own.
-const BLOWOUT_WIN_MARGIN = 28;
+// 24 points clear of the line. Calibrated on weeks 1-4 of 2026 (331 finals with a line),
+// then adjusted down because that sample is cupcake-heavy: the average line fell 25.0 -> 15.4
+// from week 1 to week 4 and the beat-by-24 rate fell 13.1% -> 1.4% as conference play began.
+// Over the whole sample 24 fires on ~8% of finals; in week 4 alone, on 1.4%. Revisit around
+// week 8 with a conference-play-only sample.
+const BLOWOUT_WIN_MARGIN = 24;
 function isBlowoutWin(g) {
   const w = winner(g), fav = favorite(g);
   if (!w || !g.spread) return false;
