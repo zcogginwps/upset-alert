@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '46';
+const APP_VERSION = '47';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -489,12 +489,12 @@ function isCloseCall(g) {
 // score-tiers: rounding each side to a tier first made the result depend on which side of a
 // boundary the line happened to fall (a -8.5 favourite counted as a two-score favourite, and
 // a 1.5-point underdog got a far easier bar than a 1.5-point favourite).
-// 24 points clear of the line. Calibrated on weeks 1-4 of 2026 (331 finals with a line),
-// then adjusted down because that sample is cupcake-heavy: the average line fell 25.0 -> 15.4
-// from week 1 to week 4 and the beat-by-24 rate fell 13.1% -> 1.4% as conference play began.
-// Over the whole sample 24 fires on ~8% of finals; in week 4 alone, on 1.4%. Revisit around
-// week 8 with a conference-play-only sample.
-const BLOWOUT_WIN_MARGIN = 24;
+// 21 points clear of the line. The weeks 1-4 sample used to pick this is cupcake-heavy - the
+// average line fell 25.0 -> 15.4 from week 1 to week 4 and the beat-by-24 rate fell 13.1% ->
+// 1.4% as conference play began - so a bar tuned on it reads too high for the real season.
+// Over weeks 1-4, 21 fires on ~12% of finals; in week 4 alone, on ~4%. Revisit around week 8
+// with a conference-play-only sample.
+const BLOWOUT_WIN_MARGIN = 21;
 function isBlowoutWin(g) {
   const w = winner(g), fav = favorite(g);
   if (!w || !g.spread) return false;
