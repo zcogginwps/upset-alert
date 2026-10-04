@@ -64,7 +64,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '48';
+const APP_VERSION = '49';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -333,7 +333,9 @@ function parseBroadcast(comp) {
 const ORDINALS = ['', '1st', '2nd', '3rd', '4th'];
 function parseSituation(sit) {
   if (!sit) return null;
-  let downDistance = sit.downDistanceText || sit.shortDownDistanceText || '';
+  // Prefer the short form: ESPN's downDistanceText is the whole phrase ("1st & 10 at TCU 19")
+  // and we show the spot separately, so trim the trailing "at ..." if we fall back to it.
+  let downDistance = (sit.shortDownDistanceText || sit.downDistanceText || '').replace(/\s+at\s+.*$/i, '');
   if (!downDistance && sit.down >= 1 && sit.down <= 4) {
     const dist = sit.distance === 0 ? 'Goal' : sit.distance;
     downDistance = dist == null ? ORDINALS[sit.down] : `${ORDINALS[sit.down]} & ${dist}`;
