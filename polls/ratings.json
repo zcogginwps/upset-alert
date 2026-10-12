@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-07",
+ "updated": "2026-10-12",
  "year": 2026,
  "source": "collegefootballdata.com",
  "polls": {
@@ -8,153 +8,153 @@
    "ranks": [
     {
      "rank": 1,
-     "team": "Georgia",
-     "id": "61",
-     "value": 30.2
+     "team": "Ohio State",
+     "id": "194",
+     "value": 29.5
     },
     {
      "rank": 2,
-     "team": "Ohio State",
-     "id": "194",
-     "value": 28.8
+     "team": "Georgia",
+     "id": "61",
+     "value": 28.3
     },
     {
      "rank": 3,
      "team": "Notre Dame",
      "id": "87",
-     "value": 28.1
+     "value": 28
     },
     {
      "rank": 4,
-     "team": "Indiana",
-     "id": "84",
-     "value": 26.9
+     "team": "Miami",
+     "id": "2390",
+     "value": 27.8
     },
     {
      "rank": 5,
-     "team": "Miami",
-     "id": "2390",
-     "value": 25.7
+     "team": "Indiana",
+     "id": "84",
+     "value": 26.7
     },
     {
      "rank": 6,
+     "team": "Texas",
+     "id": "251",
+     "value": 24.4
+    },
+    {
+     "rank": 7,
+     "team": "Utah",
+     "id": "254",
+     "value": 23.5
+    },
+    {
+     "rank": 8,
      "team": "Alabama",
      "id": "333",
      "value": 23
     },
     {
-     "rank": 7,
-     "team": "Texas",
-     "id": "251",
-     "value": 22.4
-    },
-    {
-     "rank": 8,
-     "team": "Oregon",
-     "id": "2483",
-     "value": 21.6
-    },
-    {
      "rank": 9,
-     "team": "Utah",
-     "id": "254",
-     "value": 21.5
+     "team": "LSU",
+     "id": "99",
+     "value": 21.7
     },
     {
      "rank": 10,
-     "team": "LSU",
-     "id": "99",
-     "value": 21.3
+     "team": "Texas Tech",
+     "id": "2641",
+     "value": 21.6
     },
     {
      "rank": 11,
-     "team": "Texas Tech",
-     "id": "2641",
-     "value": 20.2
+     "team": "BYU",
+     "id": "252",
+     "value": 21.5
     },
     {
      "rank": 12,
-     "team": "Florida",
-     "id": "57",
-     "value": 18.5
+     "team": "Oregon",
+     "id": "2483",
+     "value": 21
     },
     {
      "rank": 13,
-     "team": "USC",
-     "id": "30",
-     "value": 17.8
+     "team": "Missouri",
+     "id": "142",
+     "value": 18
     },
     {
      "rank": 14,
-     "team": "Tennessee",
-     "id": "2633",
-     "value": 17.7
-    },
-    {
-     "rank": 15,
      "team": "Nebraska",
      "id": "158",
      "value": 16.9
     },
     {
+     "rank": 15,
+     "team": "Tennessee",
+     "id": "2633",
+     "value": 16.7
+    },
+    {
      "rank": 16,
-     "team": "Penn State",
-     "id": "213",
-     "value": 16.9
+     "team": "Ole Miss",
+     "id": "145",
+     "value": 15.9
     },
     {
      "rank": 17,
-     "team": "BYU",
-     "id": "252",
-     "value": 16.3
+     "team": "Northwestern",
+     "id": "77",
+     "value": 15.6
     },
     {
      "rank": 18,
-     "team": "Mississippi St",
-     "id": "344",
-     "value": 15.1
+     "team": "UCLA",
+     "id": "26",
+     "value": 15.3
     },
     {
      "rank": 19,
-     "team": "Iowa",
-     "id": "2294",
-     "value": 14.8
+     "team": "Arizona",
+     "id": "12",
+     "value": 15.2
     },
     {
      "rank": 20,
-     "team": "Pitt",
-     "id": "221",
-     "value": 14.7
+     "team": "Houston",
+     "id": "248",
+     "value": 15.2
     },
     {
      "rank": 21,
-     "team": "Virginia",
-     "id": "258",
+     "team": "USC",
+     "id": "30",
      "value": 14.4
     },
     {
      "rank": 22,
-     "team": "Michigan",
-     "id": "130",
-     "value": 14.3
+     "team": "Oklahoma St",
+     "id": "197",
+     "value": 13.3
     },
     {
      "rank": 23,
-     "team": "Kansas St",
-     "id": "2306",
-     "value": 14
+     "team": "Michigan",
+     "id": "130",
+     "value": 13.1
     },
     {
      "rank": 24,
-     "team": "UCLA",
-     "id": "26",
-     "value": 13.8
+     "team": "Iowa",
+     "id": "2294",
+     "value": 13
     },
     {
      "rank": 25,
-     "team": "Missouri",
-     "id": "142",
-     "value": 13.7
+     "team": "Louisville",
+     "id": "97",
+     "value": 13
     }
    ]
   },
@@ -163,39 +163,39 @@
    "ranks": [
     {
      "rank": 1,
-     "team": "Ohio State",
-     "id": "194",
-     "value": 28.8
+     "team": "Notre Dame",
+     "id": "87",
+     "value": 29.5
     },
     {
      "rank": 2,
      "team": "Georgia",
      "id": "61",
-     "value": 28.2
+     "value": 28.7
     },
     {
      "rank": 3,
-     "team": "Notre Dame",
-     "id": "87",
-     "value": 27.8
+     "team": "Ohio State",
+     "id": "194",
+     "value": 28.2
     },
     {
      "rank": 4,
-     "team": "Texas",
-     "id": "251",
-     "value": 27.6
+     "team": "Miami",
+     "id": "2390",
+     "value": 27.7
     },
     {
      "rank": 5,
-     "team": "Miami",
-     "id": "2390",
-     "value": 27.5
+     "team": "Alabama",
+     "id": "333",
+     "value": 26.6
     },
     {
      "rank": 6,
-     "team": "Alabama",
-     "id": "333",
-     "value": 27.0
+     "team": "Texas",
+     "id": "251",
+     "value": 25.5
     },
     {
      "rank": 7,
@@ -207,109 +207,109 @@
      "rank": 8,
      "team": "LSU",
      "id": "99",
-     "value": 22.0
+     "value": 20.9
     },
     {
      "rank": 9,
      "team": "Oregon",
      "id": "2483",
-     "value": 21.6
+     "value": 19.5
     },
     {
      "rank": 10,
-     "team": "Tennessee",
-     "id": "2633",
-     "value": 18.5
+     "team": "Utah",
+     "id": "254",
+     "value": 18.8
     },
     {
      "rank": 11,
      "team": "Texas Tech",
      "id": "2641",
-     "value": 18.1
+     "value": 18.6
     },
     {
      "rank": 12,
-     "team": "Utah",
-     "id": "254",
-     "value": 18.1
+     "team": "Nebraska",
+     "id": "158",
+     "value": 17.4
     },
     {
      "rank": 13,
-     "team": "Nebraska",
-     "id": "158",
-     "value": 16.6
+     "team": "Tennessee",
+     "id": "2633",
+     "value": 17.2
     },
     {
      "rank": 14,
-     "team": "Texas A&M",
-     "id": "245",
-     "value": 16.3
+     "team": "BYU",
+     "id": "252",
+     "value": 15.7
     },
     {
      "rank": 15,
-     "team": "Florida",
-     "id": "57",
-     "value": 15.2
+     "team": "Ole Miss",
+     "id": "145",
+     "value": 15.7
     },
     {
      "rank": 16,
-     "team": "BYU",
-     "id": "252",
-     "value": 14.9
+     "team": "Oklahoma",
+     "id": "201",
+     "value": 15.1
     },
     {
      "rank": 17,
-     "team": "Northwestern",
-     "id": "77",
-     "value": 14.8
+     "team": "Missouri",
+     "id": "142",
+     "value": 15.1
     },
     {
      "rank": 18,
-     "team": "Missouri",
-     "id": "142",
-     "value": 14.3
+     "team": "Houston",
+     "id": "248",
+     "value": 14.8
     },
     {
      "rank": 19,
      "team": "USC",
      "id": "30",
-     "value": 14.2
+     "value": 14.6
     },
     {
      "rank": 20,
-     "team": "Penn State",
-     "id": "213",
-     "value": 13.7
+     "team": "Northwestern",
+     "id": "77",
+     "value": 14.0
     },
     {
      "rank": 21,
-     "team": "Oklahoma",
-     "id": "201",
-     "value": 13.5
+     "team": "Texas A&M",
+     "id": "245",
+     "value": 13.7
     },
     {
      "rank": 22,
-     "team": "Ole Miss",
-     "id": "145",
-     "value": 13.2
+     "team": "Wake Forest",
+     "id": "154",
+     "value": 13.6
     },
     {
      "rank": 23,
-     "team": "Pitt",
-     "id": "221",
+     "team": "Iowa",
+     "id": "2294",
      "value": 13.1
     },
     {
      "rank": 24,
-     "team": "Auburn",
-     "id": "2",
-     "value": 12.5
+     "team": "Louisville",
+     "id": "97",
+     "value": 12.7
     },
     {
      "rank": 25,
-     "team": "Houston",
-     "id": "248",
-     "value": 12.2
+     "team": "Florida",
+     "id": "57",
+     "value": 12.6
     }
    ]
   },
@@ -320,151 +320,151 @@
      "rank": 1,
      "team": "Alabama",
      "id": "333",
-     "value": 31.8
+     "value": 30.1
     },
     {
      "rank": 2,
      "team": "Notre Dame",
      "id": "87",
-     "value": 25.8
+     "value": 24.7
     },
     {
      "rank": 3,
-     "team": "Texas",
-     "id": "251",
-     "value": 25.7
+     "team": "Georgia",
+     "id": "61",
+     "value": 24
     },
     {
      "rank": 4,
-     "team": "LSU",
-     "id": "99",
-     "value": 23
+     "team": "Miami",
+     "id": "2390",
+     "value": 22.2
     },
     {
      "rank": 5,
-     "team": "Utah",
-     "id": "254",
-     "value": 22.5
+     "team": "LSU",
+     "id": "99",
+     "value": 22
     },
     {
      "rank": 6,
      "team": "Ohio State",
      "id": "194",
-     "value": 22.3
+     "value": 21.7
     },
     {
      "rank": 7,
-     "team": "Georgia",
-     "id": "61",
-     "value": 20.5
+     "team": "Utah",
+     "id": "254",
+     "value": 20.6
     },
     {
      "rank": 8,
-     "team": "Miami",
-     "id": "2390",
-     "value": 19.2
+     "team": "Texas",
+     "id": "251",
+     "value": 20.3
     },
     {
      "rank": 9,
      "team": "Indiana",
      "id": "84",
-     "value": 18.3
+     "value": 19.8
     },
     {
      "rank": 10,
-     "team": "Tennessee",
-     "id": "2633",
-     "value": 17.9
+     "team": "UCLA",
+     "id": "26",
+     "value": 18.9
     },
     {
      "rank": 11,
-     "team": "Northwestern",
-     "id": "77",
-     "value": 17.6
+     "team": "Houston",
+     "id": "248",
+     "value": 18.5
     },
     {
      "rank": 12,
-     "team": "Florida",
-     "id": "57",
-     "value": 16.9
+     "team": "Missouri",
+     "id": "142",
+     "value": 18
     },
     {
      "rank": 13,
-     "team": "Nebraska",
-     "id": "158",
-     "value": 16.9
+     "team": "Oregon",
+     "id": "2483",
+     "value": 16.7
     },
     {
      "rank": 14,
-     "team": "UCLA",
-     "id": "26",
-     "value": 16.9
+     "team": "Nebraska",
+     "id": "158",
+     "value": 16.7
     },
     {
      "rank": 15,
-     "team": "Texas Tech",
-     "id": "2641",
+     "team": "Northwestern",
+     "id": "77",
      "value": 16.6
     },
     {
      "rank": 16,
-     "team": "Houston",
-     "id": "248",
-     "value": 16.2
+     "team": "BYU",
+     "id": "252",
+     "value": 16.5
     },
     {
      "rank": 17,
-     "team": "Oregon",
-     "id": "2483",
-     "value": 16.2
+     "team": "Kentucky",
+     "id": "96",
+     "value": 15.9
     },
     {
      "rank": 18,
-     "team": "Missouri",
-     "id": "142",
+     "team": "Texas Tech",
+     "id": "2641",
      "value": 15.9
     },
     {
      "rank": 19,
-     "team": "BYU",
-     "id": "252",
+     "team": "Mississippi St",
+     "id": "344",
      "value": 15.5
     },
     {
      "rank": 20,
-     "team": "Mississippi St",
-     "id": "344",
-     "value": 14.9
+     "team": "Tennessee",
+     "id": "2633",
+     "value": 14.7
     },
     {
      "rank": 21,
-     "team": "Kentucky",
-     "id": "96",
-     "value": 14.2
+     "team": "Oregon St",
+     "id": "204",
+     "value": 12.8
     },
     {
      "rank": 22,
-     "team": "UCF",
-     "id": "2116",
-     "value": 14.1
+     "team": "Oklahoma St",
+     "id": "197",
+     "value": 12.7
     },
     {
      "rank": 23,
-     "team": "Pitt",
-     "id": "221",
-     "value": 12.9
+     "team": "Wake Forest",
+     "id": "154",
+     "value": 12.6
     },
     {
      "rank": 24,
-     "team": "Texas A&M",
-     "id": "245",
-     "value": 12.2
+     "team": "Iowa",
+     "id": "2294",
+     "value": 12.5
     },
     {
      "rank": 25,
-     "team": "Boise St",
-     "id": "68",
-     "value": 11.5
+     "team": "Florida",
+     "id": "57",
+     "value": 12.4
     }
    ]
   },
@@ -475,25 +475,25 @@
      "rank": 1,
      "team": "Indiana",
      "id": "84",
-     "value": 2114
+     "value": 2098
     },
     {
      "rank": 2,
-     "team": "Ohio State",
-     "id": "194",
-     "value": 2064
+     "team": "Notre Dame",
+     "id": "87",
+     "value": 2097
     },
     {
      "rank": 3,
-     "team": "Notre Dame",
-     "id": "87",
-     "value": 2054
+     "team": "Ohio State",
+     "id": "194",
+     "value": 2060
     },
     {
      "rank": 4,
      "team": "Georgia",
      "id": "61",
-     "value": 2052
+     "value": 2053
     },
     {
      "rank": 5,
@@ -505,121 +505,121 @@
      "rank": 6,
      "team": "Alabama",
      "id": "333",
-     "value": 1991
+     "value": 1990
     },
     {
      "rank": 7,
-     "team": "Texas",
-     "id": "251",
-     "value": 1930
+     "team": "Utah",
+     "id": "254",
+     "value": 1929
     },
     {
      "rank": 8,
-     "team": "Utah",
-     "id": "254",
-     "value": 1918
+     "team": "Texas",
+     "id": "251",
+     "value": 1914
     },
     {
      "rank": 9,
+     "team": "Ole Miss",
+     "id": "145",
+     "value": 1868
+    },
+    {
+     "rank": 10,
      "team": "Texas Tech",
      "id": "2641",
      "value": 1862
     },
     {
-     "rank": 10,
-     "team": "Oregon",
-     "id": "2483",
-     "value": 1844
-    },
-    {
      "rank": 11,
-     "team": "Iowa",
-     "id": "2294",
-     "value": 1821
+     "team": "LSU",
+     "id": "99",
+     "value": 1859
     },
     {
      "rank": 12,
-     "team": "James Madison",
-     "id": "256",
-     "value": 1821
+     "team": "Iowa",
+     "id": "2294",
+     "value": 1853
     },
     {
      "rank": 13,
-     "team": "Penn State",
-     "id": "213",
-     "value": 1821
+     "team": "Oregon",
+     "id": "2483",
+     "value": 1831
     },
     {
      "rank": 14,
-     "team": "Tennessee",
-     "id": "2633",
-     "value": 1786
+     "team": "Missouri",
+     "id": "142",
+     "value": 1814
     },
     {
      "rank": 15,
-     "team": "Texas A&M",
-     "id": "245",
-     "value": 1786
+     "team": "USC",
+     "id": "30",
+     "value": 1804
     },
     {
      "rank": 16,
-     "team": "USC",
-     "id": "30",
-     "value": 1785
+     "team": "Penn State",
+     "id": "213",
+     "value": 1802
     },
     {
      "rank": 17,
-     "team": "Ole Miss",
-     "id": "145",
-     "value": 1776
+     "team": "James Madison",
+     "id": "256",
+     "value": 1800
     },
     {
      "rank": 18,
-     "team": "Missouri",
-     "id": "142",
-     "value": 1761
+     "team": "Tennessee",
+     "id": "2633",
+     "value": 1776
     },
     {
      "rank": 19,
      "team": "Nebraska",
      "id": "158",
-     "value": 1751
+     "value": 1767
     },
     {
      "rank": 20,
-     "team": "LSU",
-     "id": "99",
-     "value": 1736
+     "team": "Oklahoma",
+     "id": "201",
+     "value": 1747
     },
     {
      "rank": 21,
-     "team": "Washington",
-     "id": "264",
-     "value": 1734
+     "team": "Liberty",
+     "id": "2335",
+     "value": 1746
     },
     {
      "rank": 22,
-     "team": "Oklahoma",
-     "id": "201",
-     "value": 1731
+     "team": "Texas A&M",
+     "id": "245",
+     "value": 1733
     },
     {
      "rank": 23,
-     "team": "Liberty",
-     "id": "2335",
-     "value": 1725
+     "team": "Northwestern",
+     "id": "77",
+     "value": 1731
     },
     {
      "rank": 24,
-     "team": "Northwestern",
-     "id": "77",
-     "value": 1720
+     "team": "Louisville",
+     "id": "97",
+     "value": 1729
     },
     {
      "rank": 25,
-     "team": "Michigan",
-     "id": "130",
-     "value": 1719
+     "team": "BYU",
+     "id": "252",
+     "value": 1725
     }
    ]
   }
