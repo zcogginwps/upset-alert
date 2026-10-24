@@ -76,7 +76,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '60';
+const APP_VERSION = '61';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -357,6 +357,26 @@ function parseSituation(sit) {
   return { downDistance, ball, redZone: !!sit.isRedZone };
 }
 
+// ESPN stops sending `situation` during timeouts, between possessions and around breaks, so
+// the line would blink out mid-drive. Hold the last one we saw and keep showing it until a
+// newer one arrives - but throw it away the moment the score changes, because the down and
+// distance from before a touchdown or field goal is simply wrong.
+const lastSituation = new Map(); // game id -> { sit, scoreKey, at }
+const SITUATION_TTL_MS = 20 * 60 * 1000; // never show something older than this
+
+function rememberSituation(id, raw, state, scoreKey) {
+  const fresh = parseSituation(raw);
+  if (state !== 'in') { lastSituation.delete(id); return fresh; }
+  if (fresh) { lastSituation.set(id, { sit: fresh, scoreKey, at: Date.now() }); return fresh; }
+  const prev = lastSituation.get(id);
+  if (!prev) return null;
+  if (prev.scoreKey !== scoreKey || Date.now() - prev.at > SITUATION_TTL_MS) {
+    lastSituation.delete(id);
+    return null;
+  }
+  return prev.sit;
+}
+
 function parseEvent(ev, levelKeys) {
   const comp = ev.competitions[0];
   const homeC = comp.competitors.find(c => c.homeAway === 'home');
@@ -369,6 +389,7 @@ function parseEvent(ev, levelKeys) {
   else spread = spreadCache[ev.id] || null;
 
   const st = ev.status;
+  const situation = rememberSituation(ev.id, comp.situation, st.type.state, `${home.score}-${away.score}`);
   const confKeys = new Set();
   for (const t of [home, away]) {
     if (CONF_KEYS[t.confId]) confKeys.add(CONF_KEYS[t.confId]);
@@ -389,7 +410,7 @@ function parseEvent(ev, levelKeys) {
     displayClock: st.displayClock || '',
     home, away, spread,
     tv: parseBroadcast(comp),
-    situation: parseSituation(comp.situation),
+    situation,
     confKeys,
   };
   trackPeakLead(g, home.lines, away.lines);
