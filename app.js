@@ -76,7 +76,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '62';
+const APP_VERSION = '63';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -361,7 +361,9 @@ function parseSituation(sit) {
 // the line would blink out mid-drive. Hold the last one we saw and keep showing it until a
 // newer one arrives - but throw it away the moment the score changes, because the down and
 // distance from before a touchdown or field goal is simply wrong.
-const lastSituation = new Map(); // game id -> { sit, scoreKey, at }
+// Persisted, so an auto-update reload or reopening the app mid-drive does not lose the
+// last known spot and leave the line blank until the next snap.
+const lastSituation = new Map(Object.entries(store.get('ua_sit', {}))); // game id -> { sit, scoreKey, at }
 const SITUATION_TTL_MS = 20 * 60 * 1000; // never show something older than this
 
 function rememberSituation(id, raw, state, scoreKey) {
@@ -913,6 +915,8 @@ async function refresh() {
     store.set('ua_spreads', spreadCache);
     prunePeaks();
     store.set('ua_peaks', peakLeads);
+    for (const [id, v] of lastSituation) if (Date.now() - v.at > SITUATION_TTL_MS) lastSituation.delete(id);
+    store.set('ua_sit', Object.fromEntries(lastSituation));
     store.set('ua_cb', comebackState);
     lastFetched = new Date();
     if (!currentWeek && data.week && data.season) {
