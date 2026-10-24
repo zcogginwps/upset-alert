@@ -76,7 +76,9 @@ def parse_lines(text):
         line = line.strip()
         if not line: continue
         line = re.sub(r'^\d{1,2}[\.\)]\s*', '', line)      # "7. "
-        line = re.sub(r'\s*\((\+|-)?\d+\)\s*$', '', line)     # " (+2)"
+        # Trailing parenthetical: a record "(6-1, 4-0)" or a move "(+2)". Only strip it when
+        # it is digits/punctuation, so a real name like "Miami (OH)" survives.
+        line = re.sub(r'\s*\([\d+\-,/ ]+\)\s*$', '', line)
         line = re.sub(r'\s*\((NR|new|↑|↓)[^)]*\)\s*$', '', line, flags=re.I)
         line = re.sub(r'\s+[-–—]\s+.*$', '', line)             # trailing " - comment"
         if line: out.append(line)
