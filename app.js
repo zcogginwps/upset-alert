@@ -54,6 +54,18 @@ const BLOWOUT_MAX_SPREAD = 7;   // blowout watch: line was this close or closer.
 const BLOWOUT_MIN_TIER = 3;     // ...and someone is up 3+ scores
 const REORDER_MS = 1500;        // how slowly cards slide when the order changes
 const FLASH_MS = 2000;          // one pulse for every alert colour (keep in sync with style.css)
+// Every flashing card follows one heartbeat on <body> rather than its own CSS animation.
+// Per-element negative animation-delays drifted apart because reordering a card in the DOM
+// restarts its animation while it keeps the old offset - that is what put one card exactly
+// out of phase with the rest.
+// Derived from the wall clock on every painted frame, so a throttled or missed tick cannot
+// leave the beat offset - and every card reads this one class, so they cannot drift apart.
+// requestAnimationFrame rather than setInterval: it never stalls while the page is visible
+// and costs nothing while it is not.
+(function heartbeat() {
+  requestAnimationFrame(heartbeat);
+  document.body.classList.toggle('pulse', Math.floor(Date.now() / (FLASH_MS / 2)) % 2 === 1);
+})();
 
 const LIVE_POLL_MS = 15000;
 const IDLE_POLL_MS = 60000;
@@ -64,7 +76,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '57';
+const APP_VERSION = '60';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -497,11 +509,14 @@ function isCloseCall(g) {
 // Over weeks 1-4, 21 fires on ~12% of finals; in week 4 alone, on ~4%. Revisit around week 8
 // with a conference-play-only sample.
 const BLOWOUT_WIN_MARGIN = 21;
+// ...and the game has to have actually been lopsided. Without this a 21-point underdog who
+// squeaks out a 1-point win "beats the number by 22" and was wrongly called a blowout.
+const BLOWOUT_WIN_MIN_DIFF = 24;
 function isBlowoutWin(g) {
   const w = winner(g), fav = favorite(g);
   if (!w || !g.spread) return false;
   const projected = fav ? (w === fav ? g.spread.points : -g.spread.points) : 0;
-  return diff(g) - projected >= BLOWOUT_WIN_MARGIN;
+  return diff(g) >= BLOWOUT_WIN_MIN_DIFF && diff(g) - projected >= BLOWOUT_WIN_MARGIN;
 }
 
 // ESPN sometimes flags a game "in progress" before kickoff, so a brand-new game would
@@ -649,7 +664,8 @@ function cardHtml(g, flags, fav) {
   if (flags.upset) badges.push('<span class="badge upset">Upset alert</span>');
   if (flags.close) badges.push('<span class="badge close">Close game</span>');
   if (flags.upsetWatch && !flags.upset) badges.push('<span class="badge watch w-upsetWatch">Upset watch</span>');
-  if (flags.goodGame) badges.push('<span class="badge watch w-goodGame">Good game watch</span>');
+  // Close game already says "one score, late" - no need to say a near-identical thing twice.
+  if (flags.goodGame && !flags.close) badges.push('<span class="badge watch w-goodGame">Ranked 1-score game</span>');
   if (flags.comeback) badges.push('<span class="badge watch w-comeback">Comeback watch</span>');
   if (flags.blowout) badges.push('<span class="badge watch w-blowout">Blowout watch</span>');
   if (flags.upsetWin) badges.push('<span class="badge watch w-upsetWin">Upset</span>');
@@ -753,11 +769,7 @@ function renderGames(games) {
       const active = ['upset', 'close'].filter(k => flags[k]);
       const flash = active.length ? ` flash f-${active.join('-')}` : '';
       const watch = flash ? '' : ((g.state === 'post' ? FINAL_ORDER : WATCH_ORDER).find(k => flags[k]) || '');
-      const wasFlashing = entry.el.classList.contains('flash');
       entry.el.className = `card ${g.state === 'in' ? 'live' : g.state}${flash}${watch ? ` watch w-${watch}` : ''}${flags.delayed ? ' delayed' : ''}${flags.newGame ? ' newgame' : ''}${entry.el.classList.contains('moving') ? ' moving' : ''}`;
-      // Every flashing card runs on one shared 2s clock so the pulses stay in step.
-      if (flash && !wasFlashing) entry.el.style.animationDelay = `-${Math.round(performance.now() % FLASH_MS)}ms`;
-      if (!flash) entry.el.style.animationDelay = '';
       list.appendChild(entry.el); // appendChild moves an existing node, so this also reorders
       seen.add(g.id);
     }

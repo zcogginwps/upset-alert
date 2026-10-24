@@ -205,8 +205,14 @@ body {
 .badge.new { background: var(--new); }
 .badge.delayed { background: var(--delayed); color: #1a0e00; }
 
-.card.flash { animation: flash 2s ease-in-out infinite; border-color: rgba(255,255,255,.25); }
-@keyframes flash { 0%, 100% { background: var(--fa); } 50% { background: var(--fb); } }
+/* The pulse is driven by a single `pulse` class toggling on <body> every second, so every
+   flashing card is always on the same beat even after the list reorders. */
+.card.flash {
+  background-color: var(--fa); transition: background-color 1s ease-in-out;
+  border-color: rgba(255,255,255,.25);
+}
+body.pulse .card.flash { background-color: var(--fb); }
+@media (prefers-reduced-motion: reduce) { .card.flash { transition: none; } }
 .f-upset       { --fa: var(--upset-dim); --fb: var(--upset); }
 .f-close       { --fa: var(--close-dim); --fb: var(--close); }
 .f-upset-close { --fa: var(--upset);     --fb: var(--close); }
