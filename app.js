@@ -76,7 +76,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '63';
+const APP_VERSION = '64';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -366,17 +366,34 @@ function parseSituation(sit) {
 const lastSituation = new Map(Object.entries(store.get('ua_sit', {}))); // game id -> { sit, scoreKey, at }
 const SITUATION_TTL_MS = 20 * 60 * 1000; // never show something older than this
 
-function rememberSituation(id, raw, state, scoreKey) {
+// What the points gained since the last known down most likely were. ESPN posts a touchdown
+// as 6 and then 7 (or 8) a moment later, so this is measured from the score at the last good
+// situation rather than from the previous poll - the label does not flicker as the try lands.
+function scoringPlay(points) {
+  if (points >= 6) return 'Touchdown';
+  if (points === 3) return 'Field goal';
+  if (points === 2) return 'Safety';
+  if (points === 1) return 'Extra point';
+  return null;
+}
+
+function rememberSituation(id, raw, state, home, away) {
   const fresh = parseSituation(raw);
+  const scoreKey = `${home.score}-${away.score}`;
   if (state !== 'in') { lastSituation.delete(id); return fresh; }
   if (fresh) { lastSituation.set(id, { sit: fresh, scoreKey, at: Date.now() }); return fresh; }
   const prev = lastSituation.get(id);
   if (!prev) return null;
-  if (prev.scoreKey !== scoreKey || Date.now() - prev.at > SITUATION_TTL_MS) {
-    lastSituation.delete(id);
-    return null;
-  }
-  return prev.sit;
+  if (Date.now() - prev.at > SITUATION_TTL_MS) { lastSituation.delete(id); return null; }
+  if (prev.scoreKey === scoreKey) return prev.sit;
+  // Somebody scored while ESPN went quiet. The old down is meaningless now, so say what
+  // happened instead of going blank, until the next snap gives us a real down again.
+  const [prevHome, prevAway] = prev.scoreKey.split('-').map(Number);
+  const gained = Math.max(home.score - prevHome, away.score - prevAway);
+  const team = home.score - prevHome >= away.score - prevAway ? home : away;
+  const kind = scoringPlay(gained);
+  if (!kind) { lastSituation.delete(id); return null; }
+  return { scored: `${kind} ${team.abbr}` };
 }
 
 function parseEvent(ev, levelKeys) {
@@ -391,7 +408,7 @@ function parseEvent(ev, levelKeys) {
   else spread = spreadCache[ev.id] || null;
 
   const st = ev.status;
-  const situation = rememberSituation(ev.id, comp.situation, st.type.state, `${home.score}-${away.score}`);
+  const situation = rememberSituation(ev.id, comp.situation, st.type.state, home, away);
   const confKeys = new Set();
   for (const t of [home, away]) {
     if (CONF_KEYS[t.confId]) confKeys.add(CONF_KEYS[t.confId]);
@@ -674,7 +691,8 @@ const STAR_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2
 
 // Only shown while a game is flashing as a close game, where the down matters.
 function situationHtml(g) {
-  const { downDistance, ball, redZone } = g.situation;
+  const { downDistance, ball, redZone, scored } = g.situation;
+  if (scored) return `<div class="sitline"><span class="scored">${esc(scored)}</span></div>`;
   return `<div class="sitline">
     ${downDistance ? `<span class="dd">${esc(downDistance)}</span>` : ''}
     ${ball ? `<span class="spot${redZone ? ' rz' : ''}"${redZone ? ' title="Red zone"' : ''}>${esc(ball)}</span>` : ''}
