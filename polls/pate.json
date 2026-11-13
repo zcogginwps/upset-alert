@@ -1,133 +1,133 @@
 {
   "poll": "JP Poll (Josh Pate)",
-  "week": 8,
-  "updated": "2026-10-22",
-  "source": "https://www.on3.com/news/josh-pate-unveils-latest-jp-poll-ahead-of-week-8/",
+  "week": 11,
+  "updated": "2026-11-12",
+  "source": "https://www.on3.com/news/josh-pate-unveils-latest-jp-poll-ahead-of-week-11/",
   "ranks": [
     {
       "rank": 1,
-      "team": "Ohio State",
-      "id": "194"
-    },
-    {
-      "rank": 2,
       "team": "Georgia",
       "id": "61"
     },
     {
-      "rank": 3,
+      "rank": 2,
       "team": "Notre Dame",
       "id": "87"
     },
     {
-      "rank": 4,
-      "team": "Indiana",
-      "id": "84"
-    },
-    {
-      "rank": 5,
+      "rank": 3,
       "team": "Miami",
       "id": "2390"
     },
     {
-      "rank": 6,
+      "rank": 4,
       "team": "LSU",
       "id": "99"
     },
     {
-      "rank": 7,
-      "team": "Ole Miss",
-      "id": "145"
-    },
-    {
-      "rank": 8,
-      "team": "Texas",
-      "id": "251"
-    },
-    {
-      "rank": 9,
+      "rank": 5,
       "team": "Alabama",
       "id": "333"
     },
     {
-      "rank": 10,
+      "rank": 6,
+      "team": "Texas",
+      "id": "251"
+    },
+    {
+      "rank": 7,
       "team": "Tennessee",
       "id": "2633"
     },
     {
-      "rank": 11,
-      "team": "BYU",
-      "id": "252"
+      "rank": 8,
+      "team": "Indiana",
+      "id": "84"
     },
     {
-      "rank": 12,
-      "team": "Oregon",
-      "id": "2483"
-    },
-    {
-      "rank": 13,
+      "rank": 9,
       "team": "Utah",
       "id": "254"
     },
     {
-      "rank": 14,
-      "team": "Florida",
-      "id": "57"
+      "rank": 10,
+      "team": "Ohio State",
+      "id": "194"
     },
     {
-      "rank": 15,
+      "rank": 11,
       "team": "USC",
       "id": "30"
     },
     {
-      "rank": 16,
-      "team": "Texas Tech",
-      "id": "2641"
+      "rank": 12,
+      "team": "Ole Miss",
+      "id": "145"
     },
     {
-      "rank": 17,
-      "team": "Missouri",
-      "id": "142"
-    },
-    {
-      "rank": 18,
-      "team": "Nebraska",
-      "id": "158"
-    },
-    {
-      "rank": 19,
+      "rank": 13,
       "team": "Wake Forest",
       "id": "154"
     },
     {
-      "rank": 20,
+      "rank": 14,
+      "team": "BYU",
+      "id": "252"
+    },
+    {
+      "rank": 15,
+      "team": "Oregon",
+      "id": "2483"
+    },
+    {
+      "rank": 16,
+      "team": "UCLA",
+      "id": "26"
+    },
+    {
+      "rank": 17,
+      "team": "South Carolina",
+      "id": "2579"
+    },
+    {
+      "rank": 18,
       "team": "Louisville",
       "id": "97"
     },
     {
+      "rank": 19,
+      "team": "Missouri",
+      "id": "142"
+    },
+    {
+      "rank": 20,
+      "team": "SMU",
+      "id": "2567"
+    },
+    {
       "rank": 21,
-      "team": "Iowa",
-      "id": "2294"
+      "team": "Duke",
+      "id": "150"
     },
     {
       "rank": 22,
-      "team": "Boise St",
-      "id": "68"
-    },
-    {
-      "rank": 23,
       "team": "Houston",
       "id": "248"
     },
     {
+      "rank": 23,
+      "team": "Texas Tech",
+      "id": "2641"
+    },
+    {
       "rank": 24,
-      "team": "Kentucky",
-      "id": "96"
+      "team": "Iowa",
+      "id": "2294"
     },
     {
       "rank": 25,
-      "team": "Auburn",
-      "id": "2"
+      "team": "Kentucky",
+      "id": "96"
     }
   ]
 }
