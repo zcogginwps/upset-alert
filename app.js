@@ -76,7 +76,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '70';
+const APP_VERSION = '72';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -143,11 +143,12 @@ async function pollsFromCoreApi() {
 }
 // Polls the user can pick for FBS teams and the Top 25 chip...
 const POLL_IDS = {
-  '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings',
-  'pate': 'JP Poll (Josh Pate)',
+  // Kept short: these sit in the header next to three other controls.
+  '1': 'AP Top 25', '2': 'Coaches', '21': 'CFP', '22': 'CFP Seeds',
+  'pate': 'JP Poll',
   // Computer ratings from CollegeFootballData, published weekly as polls/ratings.json by
   // scripts/update_ratings.py (the API key stays on Zane's Mac).
-  'sp': 'SP+ (Connelly)', 'fpi': 'ESPN FPI', 'srs': 'SRS', 'elo': 'Elo',
+  'sp': 'SP+', 'fpi': 'FPI', 'srs': 'SRS', 'elo': 'Elo',
 };
 const RATINGS_URL = 'polls/ratings.json';
 // Josh Pate's JP Poll has no feed; a weekly job on Zane's Mac reads the On3 write-up and
@@ -187,7 +188,7 @@ async function loadRankings(force) {
         const pate = await pr.json();
         const ranks = {};
         for (const x of pate.ranks || []) ranks[String(x.id)] = x.rank;
-        if (Object.keys(ranks).length) polls.pate = { name: `${POLL_IDS.pate} · Wk ${pate.week}`, ranks };
+        if (Object.keys(ranks).length) polls.pate = { name: POLL_IDS.pate, ranks };
       }
     } catch { /* optional */ }
     try {
@@ -246,10 +247,10 @@ function renderPollSelect() {
   const sel = byId('poll-select');
   const ids = Object.keys(POLL_IDS).filter(id => rankings.polls[id]);
   const items = ids.length ? ids : ['1'];
-  const option = id => {
-    const name = (rankings.polls[id] || { name: POLL_IDS[id] }).name;
-    return `<option value="${id}"${id === selectedPoll ? ' selected' : ''}>${esc(name)}</option>`;
-  };
+  // Label from POLL_IDS, never the name cached alongside the data - that one can be stale
+  // from an older build (it used to carry suffixes like "(Josh Pate) · Wk 11").
+  const option = id =>
+    `<option value="${id}"${id === selectedPoll ? ' selected' : ''}>${esc(POLL_IDS[id])}</option>`;
   const polls = items.filter(id => !RATING_IDS.has(id));
   const ratings = items.filter(id => RATING_IDS.has(id));
   sel.innerHTML =

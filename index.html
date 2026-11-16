@@ -12,13 +12,14 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=70">
+  <link rel="stylesheet" href="style.css?v=72">
 </head>
 <body>
   <header class="top">
     <div class="bar">
-      <h1>Quad Box Buddy<span id="demo-badge" class="demo-badge" hidden>DEMO</span></h1>
+      <h1><span class="name-long">Quad Box Buddy</span><span class="name-short">QBB</span><span id="demo-badge" class="demo-badge" hidden>DEMO</span></h1>
       <select id="week-select" aria-label="Week"><option>Loading…</option></select>
+      <select id="poll-select" aria-label="Which ranking to use"><option>Loading…</option></select>
       <button id="fav-teams-btn" class="menu-btn" aria-haspopup="dialog">★ <span class="long">Favorite </span>Teams <span class="caret">▾</span></button>
     </div>
     <div class="filters" id="filters" role="group" aria-label="Filters">
@@ -35,9 +36,6 @@
       <button class="chip all" id="chip-all">All</button>
     </div>
     <div class="toolbar">
-      <label class="pollpick">Rankings
-        <select id="poll-select" aria-label="Which ranking to use"><option>Loading…</option></select>
-      </label>
       <span class="refresh">
         <span id="updated">Loading…</span>
         <button id="refresh-btn" title="Refresh now" aria-label="Refresh now">↻</button>
@@ -90,6 +88,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=70"></script>
+  <script src="app.js?v=72"></script>
 </body>
 </html>
