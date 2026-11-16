@@ -87,8 +87,8 @@ body {
 .chip.on { background: var(--chip-on); color: #1a1400; border-color: var(--chip-on); }
 .chip.all { border-style: dashed; grid-column: span 2; }
 .chip.fav.on { background: var(--accent); }
-.toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; }
-
+/* Only the refresh stamp lives here now, and it belongs on the right. */
+.toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 7px; }
 
 .refresh { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .refresh button {
