@@ -76,7 +76,7 @@ const DEMO_SHUFFLE = new URLSearchParams(location.search).get('demo') === 'shuff
 
 // Bumped on every deploy (see scripts/bump.sh). GitHub Pages and iOS home-screen apps
 // cache aggressively, so each poll also checks version.json and reloads when it changes.
-const APP_VERSION = '69';
+const APP_VERSION = '70';
 const VERSION_URL = 'version.json';
 
 // ---------- persistence ----------
@@ -108,6 +108,39 @@ if (filters.size === 0) filters = new Set(DEFAULT_FILTERS);
 // starts, then CFP); the rankings endpoint has every poll, so the user can pick. Polls we
 // offer: AP (1), Coaches (2), CFP (21, appears late October). Cached for 30 minutes.
 const RANKINGS_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings';
+// The site endpoint above only returns whichever polls were published for the CURRENT week,
+// so once AP and the CFP committee fall a week behind the coaches poll they vanish from it
+// entirely. This index lists the latest edition of every poll, each with its own week, and
+// each entry carries the team id inside its $ref - no extra request per team.
+const RANKINGS_INDEX =
+  'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/rankings?limit=50';
+
+async function pollsFromCoreApi() {
+  const idx = await (await fetch(RANKINGS_INDEX, { cache: 'no-store' })).json();
+  const refs = (idx.items || []).map(i => String(i.$ref || '')).map(url => ({
+    url: url.replace(/^http:/, 'https:'),
+    id: (url.match(/\/rankings\/(\d+)/) || [])[1],
+    season: Number((url.match(/\/seasons\/(\d+)/) || [])[1]),
+  })).filter(r => r.id && (POLL_IDS[r.id] || LEVEL_POLLS[r.id]));
+  if (!refs.length) return {};
+  // The index keeps stale editions from past seasons; only take the newest season present.
+  const season = Math.max(...refs.map(r => r.season));
+  const out = {};
+  await Promise.all(refs.filter(r => r.season === season).map(async r => {
+    try {
+      const doc = await (await fetch(r.url, { cache: 'no-store' })).json();
+      const ranks = {};
+      for (const x of doc.ranks || []) {
+        const id = ((x.team && x.team.$ref) || '').match(/\/teams\/(\d+)/);
+        if (id && x.current) ranks[id[1]] = x.current;
+      }
+      if (Object.keys(ranks).length) {
+        out[r.id] = { name: POLL_IDS[r.id] || LEVEL_POLLS[r.id], ranks };
+      }
+    } catch { /* one poll failing must not take the rest down */ }
+  }));
+  return out;
+}
 // Polls the user can pick for FBS teams and the Top 25 chip...
 const POLL_IDS = {
   '1': 'AP Top 25', '2': 'Coaches Poll', '21': 'CFP Rankings', '22': 'CFP Seedings',
@@ -130,19 +163,24 @@ let selectedPoll = store.get('ua_poll', '1');
 async function loadRankings(force) {
   if (!force && Date.now() - rankings.at < RANKINGS_TTL_MS && Object.keys(rankings.polls).length) return;
   try {
-    const res = await fetch(RANKINGS_URL, { cache: 'no-store' });
-    if (!res.ok) return;
-    const data = await res.json();
     // Start from the optional polls we already had, so a hiccup fetching pate.json or
     // ratings.json does not make the user's selected poll vanish for the session.
     const polls = {};
     for (const id of ['pate', 'sp', 'fpi', 'srs', 'elo']) if (rankings.polls[id]) polls[id] = rankings.polls[id];
-    for (const r of data.rankings || []) {
-      if (!POLL_IDS[String(r.id)] && !LEVEL_POLLS[String(r.id)]) continue;
-      const ranks = {};
-      for (const x of r.ranks || []) if (x.team && x.current) ranks[String(x.team.id)] = x.current;
-      if (Object.keys(ranks).length) polls[String(r.id)] = { name: POLL_IDS[String(r.id)] || LEVEL_POLLS[String(r.id)], ranks };
-    }
+    try {
+      const res = await fetch(RANKINGS_URL, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        for (const r of data.rankings || []) {
+          if (!POLL_IDS[String(r.id)] && !LEVEL_POLLS[String(r.id)]) continue;
+          const ranks = {};
+          for (const x of r.ranks || []) if (x.team && x.current) ranks[String(x.team.id)] = x.current;
+          if (Object.keys(ranks).length) polls[String(r.id)] = { name: POLL_IDS[String(r.id)] || LEVEL_POLLS[String(r.id)], ranks };
+        }
+      }
+    } catch { /* the core API below is the real source now */ }
+    // Core API second so it wins: it has the freshest edition of each poll.
+    try { Object.assign(polls, await pollsFromCoreApi()); } catch { /* site data still stands */ }
     try {
       const pr = await fetch(`${PATE_URL}?t=${Date.now()}`, { cache: 'no-store' });
       if (pr.ok) {
@@ -205,32 +243,19 @@ function isRankedGame(g) { return !!(fbsRankOf(g.home) || fbsRankOf(g.away)); }
 // under separate headings so nobody mistakes an SP+ #12 for a poll position.
 const RATING_IDS = new Set(['pate', 'sp', 'fpi', 'srs', 'elo']);
 function renderPollSelect() {
-  const menu = byId('poll-menu');
+  const sel = byId('poll-select');
   const ids = Object.keys(POLL_IDS).filter(id => rankings.polls[id]);
   const items = ids.length ? ids : ['1'];
-  const item = id => `<button role="menuitemradio" aria-checked="${id === selectedPoll}" data-poll="${id}">
-      <span>${esc((rankings.polls[id] || { name: POLL_IDS[id] }).name)}</span>
-      <span class="check">${id === selectedPoll ? '✓' : ''}</span>
-    </button>`;
-  const polls = items.filter(id => !RATING_IDS.has(id)), ratings = items.filter(id => RATING_IDS.has(id));
-  menu.innerHTML = `<div class="title">Rankings <small>voted polls</small></div>` + polls.map(item).join('')
-    + (ratings.length ? `<div class="title">Ratings <small>who'd be favored · top 25</small></div>` + ratings.map(item).join('') : '');
-  const short = { '1': 'AP', '2': 'Coaches', '21': 'CFP', '22': 'CFP seeds', 'pate': 'JP Poll', 'sp': 'SP+', 'fpi': 'FPI', 'srs': 'SRS', 'elo': 'Elo' }[selectedPoll] || '';
-  byId('poll-hint').textContent = `Hold Top 25 to pick rankings · ${short}${RATING_IDS.has(selectedPoll) ? ' rating' : ''}`;
+  const option = id => {
+    const name = (rankings.polls[id] || { name: POLL_IDS[id] }).name;
+    return `<option value="${id}"${id === selectedPoll ? ' selected' : ''}>${esc(name)}</option>`;
+  };
+  const polls = items.filter(id => !RATING_IDS.has(id));
+  const ratings = items.filter(id => RATING_IDS.has(id));
+  sel.innerHTML =
+    (polls.length ? `<optgroup label="Rankings — voted polls">${polls.map(option).join('')}</optgroup>` : '') +
+    (ratings.length ? `<optgroup label="Ratings — who'd be favored">${ratings.map(option).join('')}</optgroup>` : '');
 }
-
-function openPollMenu() {
-  const menu = byId('poll-menu');
-  const chip = byId('chip-top25');
-  const top = document.querySelector('.top').getBoundingClientRect();
-  const r = chip.getBoundingClientRect();
-  menu.hidden = false;
-  menu.style.top = `${r.bottom - top.top + 6}px`;
-  menu.style.left = `${Math.max(0, r.left - top.left)}px`;
-  const overflow = menu.getBoundingClientRect().right - (top.right - 4);
-  if (overflow > 0) menu.style.left = `${Math.max(0, r.left - top.left - overflow)}px`;
-}
-function closePollMenu() { byId('poll-menu').hidden = true; }
 
 // Biggest lead seen in each game, for the comeback watch. Seeded from ESPN's per-quarter
 // line scores (so someone opening the app mid-game still gets it) and then updated from
@@ -1320,32 +1345,12 @@ byId('board').addEventListener('click', e => {
   if (star) toggleFavorite(star.closest('.card').dataset.id);
 });
 els.weekSelect.addEventListener('change', onWeekChange);
-// Top 25 chip: tap toggles the filter, hold (~450ms) or right-click opens the poll menu.
-{
-  const chip = byId('chip-top25');
-  let holdTimer = null, held = false;
-  const start = () => { held = false; clearTimeout(holdTimer); holdTimer = setTimeout(() => { held = true; openPollMenu(); }, 450); };
-  const cancel = () => clearTimeout(holdTimer);
-  chip.addEventListener('pointerdown', start);
-  chip.addEventListener('pointerup', cancel);
-  chip.addEventListener('pointerleave', cancel);
-  chip.addEventListener('pointercancel', cancel);
-  chip.addEventListener('click', e => { if (held) { e.stopImmediatePropagation(); e.preventDefault(); held = false; } }, true);
-  chip.addEventListener('contextmenu', e => { e.preventDefault(); openPollMenu(); });
-  byId('poll-menu').addEventListener('click', e => {
-    const b = e.target.closest('button[data-poll]');
-    if (!b) return;
-    selectedPoll = b.dataset.poll;
-    store.set('ua_poll', selectedPoll);
-    renderPollSelect();
-    closePollMenu();
-    renderGames(games);
-  });
-  document.addEventListener('pointerdown', e => {
-    if (!byId('poll-menu').hidden && !e.target.closest('#poll-menu') && !e.target.closest('#chip-top25')) closePollMenu();
-  });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePollMenu(); });
-}
+byId('poll-select').addEventListener('change', e => {
+  selectedPoll = e.target.value;
+  store.set('ua_poll', selectedPoll);
+  renderPollSelect();
+  renderGames(games);
+});
 renderPollSelect();
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { suppressNextSlide = true; refresh(); } // coming back counts as a fresh look, no slide show

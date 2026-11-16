@@ -85,23 +85,15 @@ body {
 .chip.all { border-style: dashed; grid-column: span 2; }
 .chip.fav.on { background: var(--accent); }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; }
-.hint { color: var(--muted); font-size: 11px; }
-.popover {
-  position: absolute; z-index: 30; min-width: 170px;
-  background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.5); padding: 6px; 
+.pollpick { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; min-width: 0; }
+#poll-select {
+  appearance: none; -webkit-appearance: none; min-width: 0; max-width: 190px;
+  background: var(--chip) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238b93a7' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 8px center;
+  color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  padding: 5px 24px 5px 9px; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer;
+  text-overflow: ellipsis;
 }
-.popover[hidden] { display: none; }
-.popover .title { color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 10px 4px; }
-.popover .title small { text-transform: none; letter-spacing: 0; font-weight: 500; opacity: .85; margin-left: 4px; }
-.popover .title + .title, .popover button + .title { margin-top: 6px; border-top: 1px solid var(--line); padding-top: 8px; }
-.popover button {
-  display: flex; align-items: center; justify-content: space-between; width: 100%;
-  background: none; border: 0; color: var(--text); font: inherit; font-size: 14px; font-weight: 600;
-  padding: 10px 10px; border-radius: 8px; cursor: pointer; text-align: left;
-}
-.popover button:hover, .popover button:focus-visible { background: var(--chip); outline: none; }
-.popover button .check { color: var(--accent); font-weight: 800; }
+
 .refresh { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .refresh button {
   border: 1px solid var(--line); background: var(--chip); color: var(--text);

@@ -12,7 +12,7 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=3">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png?v=3">
   <link rel="manifest" href="manifest.json?v=3">
-  <link rel="stylesheet" href="style.css?v=69">
+  <link rel="stylesheet" href="style.css?v=70">
 </head>
 <body>
   <header class="top">
@@ -23,7 +23,7 @@
     </div>
     <div class="filters" id="filters" role="group" aria-label="Filters">
       <button class="chip fav" data-conf="fav" title="Favorites">★ Fav</button>
-      <button class="chip" data-conf="top25" id="chip-top25" title="Ranked teams. Hold to choose the poll.">Top 25</button>
+      <button class="chip" data-conf="top25" id="chip-top25" title="Games with a ranked team">Top 25</button>
       <button class="chip" data-conf="sec">SEC</button>
       <button class="chip" data-conf="b1g">Big Ten</button>
       <button class="chip" data-conf="b12">Big 12</button>
@@ -35,13 +35,14 @@
       <button class="chip all" id="chip-all">All</button>
     </div>
     <div class="toolbar">
-      <span class="hint" id="poll-hint">Hold Top 25 to pick the poll</span>
+      <label class="pollpick">Rankings
+        <select id="poll-select" aria-label="Which ranking to use"><option>Loading…</option></select>
+      </label>
       <span class="refresh">
         <span id="updated">Loading…</span>
         <button id="refresh-btn" title="Refresh now" aria-label="Refresh now">↻</button>
       </span>
     </div>
-    <div id="poll-menu" class="popover" role="menu" hidden></div>
   </header>
   <div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-icon">↓</span></div>
 
@@ -76,7 +77,7 @@
     <span><i class="swatch comeback"></i> <b>Comeback win</b> — the winner trailed by 3+ scores</span>
     <span><i class="swatch goodgame"></i> <b>Close call</b> — a 3+ score favorite won by one score</span>
     <span><i class="swatch blowout"></i> <b>Blowout win</b> — won by 24+ <em>and</em> beat the spread by 21 or more</span>
-    <p class="fine">Hold the Top 25 chip to switch polls and ratings. Scores and lines from ESPN.</p>
+    <p class="fine">Pick which ranking drives the Top 25 filter with the Rankings menu above. Scores and lines from ESPN.</p>
   </footer>
 
   <div id="panel" class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title" hidden>
@@ -89,6 +90,6 @@
     <div class="panel-foot" id="panel-foot"></div>
   </div>
 
-  <script src="app.js?v=69"></script>
+  <script src="app.js?v=70"></script>
 </body>
 </html>
