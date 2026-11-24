@@ -1,8 +1,8 @@
 {
   "poll": "JP Poll (Josh Pate)",
-  "week": 11,
-  "updated": "2026-11-12",
-  "source": "https://www.on3.com/news/josh-pate-unveils-latest-jp-poll-ahead-of-week-11/",
+  "week": 12,
+  "updated": "2026-11-19",
+  "source": "https://www.on3.com/news/josh-pate-unveils-latest-jp-poll-ahead-of-week-12/",
   "ranks": [
     {
       "rank": 1,
@@ -21,8 +21,8 @@
     },
     {
       "rank": 4,
-      "team": "LSU",
-      "id": "99"
+      "team": "Texas",
+      "id": "251"
     },
     {
       "rank": 5,
@@ -31,8 +31,8 @@
     },
     {
       "rank": 6,
-      "team": "Texas",
-      "id": "251"
+      "team": "LSU",
+      "id": "99"
     },
     {
       "rank": 7,
@@ -41,8 +41,8 @@
     },
     {
       "rank": 8,
-      "team": "Indiana",
-      "id": "84"
+      "team": "Ohio State",
+      "id": "194"
     },
     {
       "rank": 9,
@@ -51,23 +51,23 @@
     },
     {
       "rank": 10,
-      "team": "Ohio State",
-      "id": "194"
+      "team": "Indiana",
+      "id": "84"
     },
     {
       "rank": 11,
+      "team": "Wake Forest",
+      "id": "154"
+    },
+    {
+      "rank": 12,
       "team": "USC",
       "id": "30"
     },
     {
-      "rank": 12,
-      "team": "Ole Miss",
-      "id": "145"
-    },
-    {
       "rank": 13,
-      "team": "Wake Forest",
-      "id": "154"
+      "team": "Oregon",
+      "id": "2483"
     },
     {
       "rank": 14,
@@ -76,18 +76,18 @@
     },
     {
       "rank": 15,
-      "team": "Oregon",
-      "id": "2483"
-    },
-    {
-      "rank": 16,
       "team": "UCLA",
       "id": "26"
     },
     {
+      "rank": 16,
+      "team": "Texas Tech",
+      "id": "2641"
+    },
+    {
       "rank": 17,
-      "team": "South Carolina",
-      "id": "2579"
+      "team": "Ole Miss",
+      "id": "145"
     },
     {
       "rank": 18,
@@ -101,33 +101,33 @@
     },
     {
       "rank": 20,
-      "team": "SMU",
-      "id": "2567"
-    },
-    {
-      "rank": 21,
       "team": "Duke",
       "id": "150"
     },
     {
+      "rank": 21,
+      "team": "Kentucky",
+      "id": "96"
+    },
+    {
       "rank": 22,
-      "team": "Houston",
-      "id": "248"
-    },
-    {
-      "rank": 23,
-      "team": "Texas Tech",
-      "id": "2641"
-    },
-    {
-      "rank": 24,
       "team": "Iowa",
       "id": "2294"
     },
     {
+      "rank": 23,
+      "team": "Penn State",
+      "id": "213"
+    },
+    {
+      "rank": 24,
+      "team": "Oklahoma",
+      "id": "201"
+    },
+    {
       "rank": 25,
-      "team": "Kentucky",
-      "id": "96"
+      "team": "Nebraska",
+      "id": "158"
     }
   ]
 }
